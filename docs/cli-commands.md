@@ -1,0 +1,234 @@
+# CLI Commands
+
+## Project management
+
+### `devs new <name>`
+
+Register a new project.
+
+```bash
+devs new rmbs-tool --path ~/src/rmbs-tool --color "#e06c75"
+devs new my-api --path ~/src/my-api
+```
+
+| Flag | Required | Description |
+|------|----------|-------------|
+| `--path <path>` | yes | Absolute path to the project directory |
+| `--color <hex>` | no | Tab color (`"#rrggbb"` or `"rrggbb"`) |
+
+Creates `~/.config/devs/projects/<name>.toml` with default layout.
+Fails if a project with that name already exists.
+
+
+### `devs list`
+
+List all registered projects.
+
+```bash
+devs list
+```
+
+Output:
+```
+rmbs-tool    ~/src/rmbs-tool
+my-api       ~/src/my-api
+playground   ~/src/playground
+```
+
+
+### `devs status`
+
+Show all projects with live status information.
+
+```bash
+devs status
+```
+
+Output:
+```
+PROJECT        PATH                        TMUX    CLAUDE   LAST NOTE
+rmbs-tool      ~/src/rmbs-tool             alive   2 active "implement step 4"
+my-api         ~/src/my-api                dead    0 active "waiting on PR review"
+playground     ~/src/playground            alive   1 active --
+```
+
+Checks tmux session liveness via `tmux has-session -t <name>`.
+Counts active (not done) Claude sessions.
+Shows the most recent note (truncated).
+
+
+### `devs remove <name>`
+
+Remove a project from tracking.
+
+```bash
+devs remove rmbs-tool
+devs remove rmbs-tool --kill    # also kill tmux session if alive
+```
+
+Deletes the TOML file. Asks for confirmation unless `--force` is passed.
+
+
+### `devs edit <name>`
+
+Open the project's TOML config in `$EDITOR`.
+
+```bash
+devs edit rmbs-tool
+```
+
+
+### `devs config <name>`
+
+Print the project's current config to stdout.
+
+```bash
+devs config rmbs-tool
+```
+
+
+## Session management
+
+### `devs open <name>`
+
+Open (or attach to) a project's tmux session.
+
+```bash
+devs open rmbs-tool              # auto: use saved state if available, else default
+devs open rmbs-tool --default    # always use declarative layout
+devs open rmbs-tool --saved      # always use saved state (fail if none)
+```
+
+Behavior:
+1. If tmux session `<name>` already exists → attach to it
+2. If saved state exists → ask whether to restore or use default (unless `--default`/`--saved`)
+3. Create tmux session from chosen layout
+4. Set tab color via escape sequences
+5. Print active Claude session hints
+6. Attach to the session
+
+### `devs save <name>`
+
+Snapshot the current tmux state for a project.
+
+```bash
+devs save rmbs-tool
+```
+
+Captures:
+- tmux layout string (`list-windows -F '#{window_layout}'`)
+- Each pane's working directory and command (`list-panes -F`)
+- Timestamp
+
+Writes to `[last_state]` in the project's TOML file.
+Overwrites any previous saved state.
+
+
+### `devs reset <name>`
+
+Discard saved tmux state, reverting to the declarative layout.
+
+```bash
+devs reset rmbs-tool
+```
+
+Removes the `[last_state]` section from the TOML file.
+
+
+## Claude session tracking
+
+### `devs claude <name> <label>`
+
+Launch a new Claude Code session within a project.
+
+```bash
+devs claude rmbs-tool "brainstorm architecture"
+```
+
+1. Generates a session ID (or captures it from Claude)
+2. Records it in the project's TOML with the label and status `active`
+3. Launches `claude` in the current terminal
+
+### `devs claude <name> --resume <id>`
+
+Resume an existing Claude Code session.
+
+```bash
+devs claude rmbs-tool --resume abc123
+```
+
+Launches `claude --resume <id>`.
+
+
+### `devs claudes <name>`
+
+List Claude sessions for a project.
+
+```bash
+devs claudes rmbs-tool           # active sessions only
+devs claudes rmbs-tool --all     # include done sessions
+```
+
+Output:
+```
+ID        LABEL                      STATUS   STARTED
+abc123    brainstorm architecture    active   2026-03-01 10:00
+def456    implement step 4           active   2026-03-02 14:30
+```
+
+
+### `devs claude-done <name> <session-id>`
+
+Mark a Claude session as done.
+
+```bash
+devs claude-done rmbs-tool abc123
+```
+
+Sets `status = "done"` and `finished_at` to the current timestamp.
+
+
+## Notes
+
+### `devs note <name> <message>`
+
+Add a timestamped note.
+
+```bash
+devs note rmbs-tool "picking up from step 4 of the migration"
+```
+
+
+### `devs notes <name>`
+
+View notes for a project.
+
+```bash
+devs notes rmbs-tool             # last 20 notes
+devs notes rmbs-tool --all       # all notes
+devs notes rmbs-tool --since 2d  # notes from last 2 days
+devs notes rmbs-tool --clear     # delete all notes
+```
+
+Output:
+```
+2026-03-03 14:30  blocked on API key, asked Sarah
+2026-03-03 10:15  picking up from step 4 of the migration plan
+```
+
+Notes are displayed newest-first.
+
+
+## Global
+
+### `devs --version`
+
+Print version.
+
+### `devs --help`
+
+Print help for all commands.
+
+### `devs <command> --help`
+
+Print help for a specific command.
