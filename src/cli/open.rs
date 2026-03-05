@@ -1,6 +1,6 @@
 use anyhow::{Result, bail};
 
-use crate::domain::claude_session::ClaudeSessionStatus;
+use crate::domain::claude_session::{ClaudeSession, ClaudeSessionStatus};
 use crate::domain::layout::{Layout, SplitDirection};
 use crate::domain::saved_state::SavedState;
 use crate::ports::project_repository::ProjectRepository;
@@ -48,7 +48,13 @@ pub fn run(
             config.last_state.as_ref().unwrap(),
         )?;
     } else {
-        create_from_declarative_layout(tmux, name, &config.project.path, config.layout.as_ref())?;
+        create_from_declarative_layout(
+            tmux,
+            name,
+            &config.project.path,
+            config.layout.as_ref(),
+            &config.claude_sessions,
+        )?;
     }
 
     if let Some(color) = &config.project.color {
@@ -65,11 +71,32 @@ pub fn run(
     Ok(())
 }
 
+fn expand_cmd(cmd: &str, name: &str, sessions: &[ClaudeSession]) -> String {
+    let label = if cmd == "claude" {
+        "default"
+    } else if let Some(label) = cmd.strip_prefix("claude:") {
+        label
+    } else {
+        return cmd.to_string();
+    };
+
+    let has_active_session = sessions
+        .iter()
+        .any(|s| s.label == label && matches!(s.status, ClaudeSessionStatus::Active));
+
+    if has_active_session {
+        format!("devs claude {name} --resume {label}")
+    } else {
+        format!("devs claude {name} {label}")
+    }
+}
+
 fn create_from_declarative_layout(
     tmux: &dyn TmuxAdapter,
     name: &str,
     path: &str,
     layout: Option<&Layout>,
+    sessions: &[ClaudeSession],
 ) -> Result<()> {
     tmux.create_session(name, path)?;
 
@@ -79,7 +106,8 @@ fn create_from_declarative_layout(
     };
 
     if let Some(cmd) = &layout.main.cmd {
-        tmux.send_keys(&format!("{name}:0.0"), cmd)?;
+        let expanded = expand_cmd(cmd, name, sessions);
+        tmux.send_keys(&format!("{name}:0.0"), &expanded)?;
     }
 
     let mut right_pane: Option<u32> = None;
@@ -106,7 +134,8 @@ fn create_from_declarative_layout(
             }
         }
         if let Some(cmd) = &pane.cmd {
-            tmux.send_keys(&format!("{name}:0"), cmd)?;
+            let expanded = expand_cmd(cmd, name, sessions);
+            tmux.send_keys(&format!("{name}:0"), &expanded)?;
         }
     }
 
@@ -161,7 +190,7 @@ mod tests {
     #[test]
     fn attaches_to_existing_session_with_color() {
         let (_dir, repo) = setup_repo();
-        crate::cli::new::run(&repo, "myproj", "/some/path", Some("#e06c75")).unwrap();
+        crate::cli::new::run(&repo, "myproj", "/some/path", Some("#e06c75"), None, &[]).unwrap();
 
         let tmux = MockTmuxAdapter::with_session("", vec![]);
         let terminal = MockTerminalAdapter::new();
@@ -175,7 +204,7 @@ mod tests {
     #[test]
     fn errors_with_both_flags() {
         let (_dir, repo) = setup_repo();
-        crate::cli::new::run(&repo, "myproj", "/some/path", None).unwrap();
+        crate::cli::new::run(&repo, "myproj", "/some/path", None, None, &[]).unwrap();
 
         let tmux = MockTmuxAdapter::no_session();
         let terminal = MockTerminalAdapter::new();
@@ -193,7 +222,7 @@ mod tests {
     #[test]
     fn saved_flag_errors_without_saved_state() {
         let (_dir, repo) = setup_repo();
-        crate::cli::new::run(&repo, "myproj", "/some/path", None).unwrap();
+        crate::cli::new::run(&repo, "myproj", "/some/path", None, None, &[]).unwrap();
 
         let tmux = MockTmuxAdapter::no_session();
         let terminal = MockTerminalAdapter::new();
@@ -206,7 +235,7 @@ mod tests {
     #[test]
     fn creates_minimal_session_without_layout() {
         let (_dir, repo) = setup_repo();
-        crate::cli::new::run(&repo, "myproj", "/some/path", None).unwrap();
+        crate::cli::new::run(&repo, "myproj", "/some/path", None, None, &[]).unwrap();
 
         let tmux = MockTmuxAdapter::no_session();
         let terminal = MockTerminalAdapter::new();
@@ -223,7 +252,7 @@ mod tests {
     #[test]
     fn creates_declarative_layout_with_splits() {
         let (_dir, repo) = setup_repo();
-        crate::cli::new::run(&repo, "myproj", "/some/path", None).unwrap();
+        crate::cli::new::run(&repo, "myproj", "/some/path", None, None, &[]).unwrap();
 
         // Add a layout with main cmd + right split + bottom-right split
         let mut config = repo.load("myproj").unwrap();
@@ -257,7 +286,7 @@ mod tests {
                 "create_session(myproj, /some/path)",
                 "send_keys(myproj:0.0, nvim)",
                 "split_window(myproj:0, horizontal, 40%, /some/path)",
-                "send_keys(myproj:0, claude)",
+                "send_keys(myproj:0, devs claude myproj default)",
                 "select_pane(myproj:0.1)",
                 "split_window(myproj:0, vertical, -, /some/path)",
                 "select_pane(myproj:0.0)",
@@ -269,7 +298,7 @@ mod tests {
     #[test]
     fn default_flag_uses_declarative_over_saved() {
         let (_dir, repo) = setup_repo();
-        crate::cli::new::run(&repo, "myproj", "/some/path", None).unwrap();
+        crate::cli::new::run(&repo, "myproj", "/some/path", None, None, &[]).unwrap();
 
         // Add both a layout and saved state
         let mut config = repo.load("myproj").unwrap();
@@ -302,7 +331,7 @@ mod tests {
     #[test]
     fn prefers_saved_state_when_no_flags() {
         let (_dir, repo) = setup_repo();
-        crate::cli::new::run(&repo, "myproj", "/some/path", None).unwrap();
+        crate::cli::new::run(&repo, "myproj", "/some/path", None, None, &[]).unwrap();
 
         let mut config = repo.load("myproj").unwrap();
         config.layout = Some(Layout {
@@ -335,7 +364,7 @@ mod tests {
     #[test]
     fn creates_from_saved_state_skipping_shells() {
         let (_dir, repo) = setup_repo();
-        crate::cli::new::run(&repo, "myproj", "/some/path", None).unwrap();
+        crate::cli::new::run(&repo, "myproj", "/some/path", None, None, &[]).unwrap();
 
         let mut config = repo.load("myproj").unwrap();
         config.last_state = Some(SavedState {
@@ -384,7 +413,7 @@ mod tests {
     #[test]
     fn sets_tab_color_on_new_session() {
         let (_dir, repo) = setup_repo();
-        crate::cli::new::run(&repo, "myproj", "/some/path", Some("#e06c75")).unwrap();
+        crate::cli::new::run(&repo, "myproj", "/some/path", Some("#e06c75"), None, &[]).unwrap();
 
         let tmux = MockTmuxAdapter::no_session();
         let terminal = MockTerminalAdapter::new();
@@ -395,9 +424,103 @@ mod tests {
     }
 
     #[test]
+    fn expand_cmd_with_existing_session_returns_resume() {
+        let sessions = vec![ClaudeSession {
+            id: "sess_1".to_string(),
+            label: "main-session".to_string(),
+            started_at: dt("2026-03-01T10:00:00Z"),
+            status: ClaudeSessionStatus::Active,
+        }];
+
+        assert_eq!(
+            expand_cmd("claude:main-session", "myproj", &sessions),
+            "devs claude myproj --resume main-session"
+        );
+    }
+
+    #[test]
+    fn expand_cmd_without_existing_session_returns_start() {
+        let sessions: Vec<ClaudeSession> = vec![];
+
+        assert_eq!(
+            expand_cmd("claude:new-label", "myproj", &sessions),
+            "devs claude myproj new-label"
+        );
+    }
+
+    #[test]
+    fn expand_cmd_done_session_returns_start() {
+        let sessions = vec![ClaudeSession {
+            id: "sess_1".to_string(),
+            label: "old".to_string(),
+            started_at: dt("2026-03-01T10:00:00Z"),
+            status: ClaudeSessionStatus::Done(dt("2026-03-02T10:00:00Z")),
+        }];
+
+        assert_eq!(
+            expand_cmd("claude:old", "myproj", &sessions),
+            "devs claude myproj old"
+        );
+    }
+
+    #[test]
+    fn expand_cmd_bare_claude_uses_default_label() {
+        let sessions: Vec<ClaudeSession> = vec![];
+
+        assert_eq!(
+            expand_cmd("claude", "myproj", &sessions),
+            "devs claude myproj default"
+        );
+    }
+
+    #[test]
+    fn expand_cmd_non_claude_passes_through() {
+        let sessions: Vec<ClaudeSession> = vec![];
+
+        assert_eq!(expand_cmd("nvim", "myproj", &sessions), "nvim");
+    }
+
+    #[test]
+    fn open_expands_claude_shorthand_in_layout() {
+        let (_dir, repo) = setup_repo();
+        crate::cli::new::run(&repo, "myproj", "/some/path", None, None, &[]).unwrap();
+
+        let mut config = repo.load("myproj").unwrap();
+        config.layout = Some(Layout {
+            main: MainPane {
+                cmd: Some("nvim".to_string()),
+            },
+            panes: vec![SplitPane {
+                split: SplitDirection::Right,
+                cmd: Some("claude:code-review".to_string()),
+                size: None,
+            }],
+        });
+        config.claude_sessions = vec![ClaudeSession {
+            id: "sess_1".to_string(),
+            label: "code-review".to_string(),
+            started_at: dt("2026-03-01T10:00:00Z"),
+            status: ClaudeSessionStatus::Active,
+        }];
+        repo.save(&config).unwrap();
+
+        let tmux = MockTmuxAdapter::no_session();
+        let terminal = MockTerminalAdapter::new();
+
+        run(&repo, &tmux, &terminal, "myproj", false, false).unwrap();
+
+        let calls = tmux.calls();
+        assert!(
+            calls.contains(
+                &"send_keys(myproj:0, devs claude myproj --resume code-review)".to_string()
+            )
+        );
+    }
+
+    #[test]
     fn handles_active_claude_sessions() {
         let (_dir, repo) = setup_repo();
-        crate::cli::new::run(&repo, "myproj", "/some/path", None).unwrap();
+        crate::cli::new::run(&repo, "myproj", "/some/path", None, None, &[]).unwrap();
 
         let mut config = repo.load("myproj").unwrap();
         config.claude_sessions = vec![

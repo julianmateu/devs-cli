@@ -29,9 +29,20 @@ fn main() -> Result<()> {
     let launcher = OsProcessLauncher;
 
     match cli.command {
-        Commands::New { name, path, color } => {
-            cli::new::run(&repo, &name, &path, color.as_deref())?
-        }
+        Commands::New {
+            name,
+            path,
+            color,
+            from,
+            sessions,
+        } => cli::new::run(
+            &repo,
+            &name,
+            &path,
+            color.as_deref(),
+            from.as_deref(),
+            &sessions,
+        )?,
         Commands::List => cli::list::run(&repo)?,
         Commands::Config { name } => cli::config::run(&repo, &name)?,
         Commands::Edit { name } => cli::edit::run(&name, &config_dir)?,

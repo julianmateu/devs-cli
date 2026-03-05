@@ -21,7 +21,7 @@ mod tests {
     fn remove_deletes_project_with_force() {
         let dir = tempdir().unwrap();
         let repo = TomlProjectRepository::new(dir.path().to_path_buf());
-        crate::cli::new::run(&repo, "doomed", "/some/path", None).unwrap();
+        crate::cli::new::run(&repo, "doomed", "/some/path", None, None, &[]).unwrap();
 
         assert!(run(&repo, "doomed", true).is_ok());
         assert!(repo.load("doomed").is_err());
@@ -31,7 +31,7 @@ mod tests {
     fn remove_fails_without_force() {
         let dir = tempdir().unwrap();
         let repo = TomlProjectRepository::new(dir.path().to_path_buf());
-        crate::cli::new::run(&repo, "safe", "/some/path", None).unwrap();
+        crate::cli::new::run(&repo, "safe", "/some/path", None, None, &[]).unwrap();
 
         assert!(run(&repo, "safe", false).is_err());
         assert!(repo.load("safe").is_ok());

@@ -32,7 +32,7 @@ mod tests {
     fn list_succeeds_with_projects() {
         let dir = tempdir().unwrap();
         let repo = TomlProjectRepository::new(dir.path().to_path_buf());
-        crate::cli::new::run(&repo, "test-project", "/some/path", None).unwrap();
+        crate::cli::new::run(&repo, "test-project", "/some/path", None, None, &[]).unwrap();
 
         assert!(run(&repo).is_ok());
     }

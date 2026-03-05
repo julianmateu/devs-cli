@@ -71,7 +71,7 @@ mod tests {
     #[test]
     fn notes_shows_last_20_by_default() {
         let (repo, _dir) = test_repo();
-        crate::cli::new::run(&repo, "myproject", "/some/path", None).unwrap();
+        crate::cli::new::run(&repo, "myproject", "/some/path", None, None, &[]).unwrap();
 
         let notes: Vec<Note> = (0..25)
             .map(|i| Note {
@@ -87,7 +87,7 @@ mod tests {
     #[test]
     fn notes_all_flag_shows_everything() {
         let (repo, _dir) = test_repo();
-        crate::cli::new::run(&repo, "myproject", "/some/path", None).unwrap();
+        crate::cli::new::run(&repo, "myproject", "/some/path", None, None, &[]).unwrap();
 
         let notes: Vec<Note> = (0..25)
             .map(|i| Note {
@@ -103,7 +103,7 @@ mod tests {
     #[test]
     fn notes_since_filters_by_time() {
         let (repo, _dir) = test_repo();
-        crate::cli::new::run(&repo, "myproject", "/some/path", None).unwrap();
+        crate::cli::new::run(&repo, "myproject", "/some/path", None, None, &[]).unwrap();
 
         let now = chrono::Utc::now();
         let old = now - chrono::TimeDelta::days(5);
@@ -130,7 +130,7 @@ mod tests {
     #[test]
     fn notes_since_rejects_invalid_duration() {
         let (repo, _dir) = test_repo();
-        crate::cli::new::run(&repo, "myproject", "/some/path", None).unwrap();
+        crate::cli::new::run(&repo, "myproject", "/some/path", None, None, &[]).unwrap();
 
         let result = run(&repo, "myproject", false, Some("bad"), false);
         assert!(result.is_err());
@@ -139,7 +139,7 @@ mod tests {
     #[test]
     fn notes_clear_removes_all_notes() {
         let (repo, _dir) = test_repo();
-        crate::cli::new::run(&repo, "myproject", "/some/path", None).unwrap();
+        crate::cli::new::run(&repo, "myproject", "/some/path", None, None, &[]).unwrap();
 
         add_notes(
             &repo,
@@ -165,7 +165,7 @@ mod tests {
     #[test]
     fn notes_clear_on_empty_notes() {
         let (repo, _dir) = test_repo();
-        crate::cli::new::run(&repo, "myproject", "/some/path", None).unwrap();
+        crate::cli::new::run(&repo, "myproject", "/some/path", None, None, &[]).unwrap();
 
         run(&repo, "myproject", false, None, true).unwrap();
 
@@ -176,7 +176,7 @@ mod tests {
     #[test]
     fn notes_empty_project_shows_message() {
         let (repo, _dir) = test_repo();
-        crate::cli::new::run(&repo, "myproject", "/some/path", None).unwrap();
+        crate::cli::new::run(&repo, "myproject", "/some/path", None, None, &[]).unwrap();
 
         run(&repo, "myproject", false, None, false).unwrap();
     }
@@ -192,7 +192,7 @@ mod tests {
     #[test]
     fn notes_default_limit_is_20() {
         let (repo, _dir) = test_repo();
-        crate::cli::new::run(&repo, "myproject", "/some/path", None).unwrap();
+        crate::cli::new::run(&repo, "myproject", "/some/path", None, None, &[]).unwrap();
 
         let notes: Vec<Note> = (0..25)
             .map(|i| Note {
