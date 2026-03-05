@@ -3,6 +3,34 @@ mod cli;
 mod domain;
 mod ports;
 
-fn main() {
-    println!("Hello, world!");
+use std::path::PathBuf;
+
+use anyhow::Result;
+use clap::Parser;
+
+use adapters::toml_project_repository::TomlProjectRepository;
+use cli::{Cli, Commands};
+
+fn config_dir() -> PathBuf {
+    dirs::config_dir()
+        .expect("could not determine config directory")
+        .join("devs")
+}
+
+fn main() -> Result<()> {
+    let cli = Cli::parse();
+    let config_dir = config_dir();
+    let repo = TomlProjectRepository::new(config_dir.clone());
+
+    match cli.command {
+        Commands::New { name, path, color } => {
+            cli::new::run(&repo, &name, &path, color.as_deref())?
+        }
+        Commands::List => cli::list::run(&repo)?,
+        Commands::Config { name } => cli::config::run(&repo, &name)?,
+        Commands::Edit { name } => cli::edit::run(&name, &config_dir)?,
+        Commands::Remove { name, force } => cli::remove::run(&repo, &name, force)?,
+    }
+
+    Ok(())
 }
