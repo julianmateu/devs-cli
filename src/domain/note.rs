@@ -3,8 +3,8 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Note {
-    content: String,
-    created_at: DateTime<Utc>,
+    pub content: String,
+    pub created_at: DateTime<Utc>,
 }
 
 #[cfg(test)]
