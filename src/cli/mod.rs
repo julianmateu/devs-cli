@@ -4,7 +4,10 @@ pub mod config;
 pub mod edit;
 pub mod list;
 pub mod new;
+pub mod open;
 pub mod remove;
+pub mod reset;
+pub mod save;
 
 #[derive(Parser)]
 #[command(name = "devs", about = "Project-aware tmux session manager")]
@@ -45,5 +48,26 @@ pub enum Commands {
         /// Skip confirmation prompt
         #[arg(long)]
         force: bool,
+    },
+    /// Create or attach to a tmux session for a project
+    Open {
+        /// Project name
+        name: String,
+        /// Use the declarative layout even if saved state exists
+        #[arg(long)]
+        default: bool,
+        /// Use the saved layout (error if none)
+        #[arg(long)]
+        saved: bool,
+    },
+    /// Save the current tmux layout for a project
+    Save {
+        /// Project name
+        name: String,
+    },
+    /// Reset a project's layout to its declarative default
+    Reset {
+        /// Project name
+        name: String,
     },
 }
