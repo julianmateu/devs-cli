@@ -2,7 +2,9 @@ use chrono::TimeDelta;
 use thiserror::Error;
 
 #[derive(Debug, Error, PartialEq)]
-#[error("invalid duration '{input}': expected a number followed by 'd' (days), 'h' (hours), or 'm' (minutes), e.g. '2d', '1h', '30m'")]
+#[error(
+    "invalid duration '{input}': expected a number followed by 'd' (days), 'h' (hours), or 'm' (minutes), e.g. '2d', '1h', '30m'"
+)]
 pub struct ParseDurationError {
     input: String,
 }

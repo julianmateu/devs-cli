@@ -1,4 +1,4 @@
-use anyhow::{bail, Result};
+use anyhow::{Result, bail};
 use uuid::Uuid;
 
 use crate::domain::claude_session::{ClaudeSession, ClaudeSessionStatus};

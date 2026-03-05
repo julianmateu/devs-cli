@@ -29,8 +29,7 @@ fn emit_osc(payload: &str) -> io::Result<()> {
 impl TerminalAdapter for ItermTerminalAdapter {
     fn set_tab_color(&self, hex: &str) -> Result<()> {
         let hex = hex.strip_prefix('#').unwrap_or(hex);
-        emit_osc(&format!("1337;SetColors=tab={hex}"))
-            .context("failed to set tab color")
+        emit_osc(&format!("1337;SetColors=tab={hex}")).context("failed to set tab color")
     }
 
     fn reset_tab_color(&self) -> Result<()> {

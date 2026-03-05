@@ -48,10 +48,7 @@ mod tests {
         (repo, dir)
     }
 
-    fn create_project_with_sessions(
-        repo: &TomlProjectRepository,
-        sessions: Vec<ClaudeSession>,
-    ) {
+    fn create_project_with_sessions(repo: &TomlProjectRepository, sessions: Vec<ClaudeSession>) {
         crate::cli::new::run(repo, "myproject", "/some/path", None).unwrap();
         let mut config = repo.load("myproject").unwrap();
         config.claude_sessions = sessions;

@@ -1,4 +1,4 @@
-use anyhow::{bail, Result};
+use anyhow::{Result, bail};
 
 use crate::domain::claude_session::ClaudeSessionStatus;
 use crate::ports::project_repository::ProjectRepository;
@@ -34,10 +34,7 @@ mod tests {
         (repo, dir)
     }
 
-    fn create_project_with_sessions(
-        repo: &TomlProjectRepository,
-        sessions: Vec<ClaudeSession>,
-    ) {
+    fn create_project_with_sessions(repo: &TomlProjectRepository, sessions: Vec<ClaudeSession>) {
         crate::cli::new::run(repo, "myproject", "/some/path", None).unwrap();
         let mut config = repo.load("myproject").unwrap();
         config.claude_sessions = sessions;
@@ -73,12 +70,7 @@ mod tests {
 
         let result = run(&repo, "myproject", "nonexistent");
         assert!(result.is_err());
-        assert!(
-            result
-                .unwrap_err()
-                .to_string()
-                .contains("not found")
-        );
+        assert!(result.unwrap_err().to_string().contains("not found"));
     }
 
     #[test]
@@ -96,12 +88,7 @@ mod tests {
 
         let result = run(&repo, "myproject", "session-1");
         assert!(result.is_err());
-        assert!(
-            result
-                .unwrap_err()
-                .to_string()
-                .contains("already done")
-        );
+        assert!(result.unwrap_err().to_string().contains("already done"));
     }
 
     #[test]
@@ -140,6 +127,9 @@ mod tests {
             config.claude_sessions[0].status,
             ClaudeSessionStatus::Done(_)
         ));
-        assert_eq!(config.claude_sessions[1].status, ClaudeSessionStatus::Active);
+        assert_eq!(
+            config.claude_sessions[1].status,
+            ClaudeSessionStatus::Active
+        );
     }
 }

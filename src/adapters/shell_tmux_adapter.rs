@@ -1,6 +1,6 @@
 use std::process::Command;
 
-use anyhow::{bail, Context, Result};
+use anyhow::{Context, Result, bail};
 
 use crate::domain::saved_state::SavedPane;
 use crate::ports::tmux_adapter::TmuxAdapter;
@@ -54,7 +54,13 @@ impl TmuxAdapter for ShellTmuxAdapter {
         self.run_tmux(&[cmd, "-t", name])
     }
 
-    fn split_window(&self, target: &str, horizontal: bool, size: Option<&str>, path: Option<&str>) -> Result<()> {
+    fn split_window(
+        &self,
+        target: &str,
+        horizontal: bool,
+        size: Option<&str>,
+        path: Option<&str>,
+    ) -> Result<()> {
         let flag = if horizontal { "-h" } else { "-v" };
         let pct;
         let mut args = vec!["split-window", flag, "-t", target];

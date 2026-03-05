@@ -1,4 +1,4 @@
-use anyhow::{bail, Result};
+use anyhow::{Result, bail};
 
 use crate::domain::claude_session::ClaudeSessionStatus;
 use crate::domain::layout::{Layout, SplitDirection};
@@ -41,7 +41,12 @@ pub fn run(
     };
 
     if use_saved_state {
-        create_from_saved_state(tmux, name, &config.project.path, config.last_state.as_ref().unwrap())?;
+        create_from_saved_state(
+            tmux,
+            name,
+            &config.project.path,
+            config.last_state.as_ref().unwrap(),
+        )?;
     } else {
         create_from_declarative_layout(tmux, name, &config.project.path, config.layout.as_ref())?;
     }
@@ -147,7 +152,7 @@ mod tests {
     use crate::domain::claude_session::{ClaudeSession, ClaudeSessionStatus};
     use crate::domain::layout::{Layout, MainPane, SplitDirection, SplitPane};
     use crate::domain::saved_state::{SavedPane, SavedState};
-    use crate::domain::test_helpers::{dt, MockTerminalAdapter, MockTmuxAdapter};
+    use crate::domain::test_helpers::{MockTerminalAdapter, MockTmuxAdapter, dt};
     use tempfile::tempdir;
 
     fn setup_repo() -> (tempfile::TempDir, TomlProjectRepository) {
@@ -180,10 +185,12 @@ mod tests {
 
         let result = run(&repo, &tmux, &terminal, "myproj", true, true);
         assert!(result.is_err());
-        assert!(result
-            .unwrap_err()
-            .to_string()
-            .contains("cannot use both --default and --saved"));
+        assert!(
+            result
+                .unwrap_err()
+                .to_string()
+                .contains("cannot use both --default and --saved")
+        );
     }
 
     #[test]
@@ -196,10 +203,7 @@ mod tests {
 
         let result = run(&repo, &tmux, &terminal, "myproj", false, true);
         assert!(result.is_err());
-        assert!(result
-            .unwrap_err()
-            .to_string()
-            .contains("no saved state"));
+        assert!(result.unwrap_err().to_string().contains("no saved state"));
     }
 
     #[test]
@@ -372,7 +376,7 @@ mod tests {
                 "split_window(myproj:0, horizontal, -, /some/path)", // pane 1
                 "split_window(myproj:0, horizontal, -, /some/path)", // pane 2
                 "apply_layout(myproj, 5aed,176x79,0,0)",
-                "send_keys(myproj:0.0, nvim)",       // nvim is not a shell
+                "send_keys(myproj:0.0, nvim)", // nvim is not a shell
                 "send_keys(myproj:0.2, cargo watch)", // cargo watch is not a shell
                 // zsh (pane 1) is skipped
                 "attach(myproj)",

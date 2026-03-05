@@ -1,4 +1,4 @@
-use anyhow::{bail, Result};
+use anyhow::{Result, bail};
 
 use crate::domain::saved_state::SavedState;
 use crate::ports::project_repository::ProjectRepository;

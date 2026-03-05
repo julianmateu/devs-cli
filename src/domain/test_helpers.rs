@@ -2,7 +2,7 @@ use std::cell::RefCell;
 
 use anyhow::Result;
 use chrono::{DateTime, Utc};
-use serde::{de::DeserializeOwned, Serialize};
+use serde::{Serialize, de::DeserializeOwned};
 
 use crate::domain::saved_state::SavedPane;
 use crate::ports::terminal_adapter::TerminalAdapter;
@@ -71,7 +71,13 @@ impl TmuxAdapter for MockTmuxAdapter {
         Ok(())
     }
 
-    fn split_window(&self, target: &str, horizontal: bool, size: Option<&str>, path: Option<&str>) -> Result<()> {
+    fn split_window(
+        &self,
+        target: &str,
+        horizontal: bool,
+        size: Option<&str>,
+        path: Option<&str>,
+    ) -> Result<()> {
         let dir = if horizontal { "horizontal" } else { "vertical" };
         let size = size.unwrap_or("-");
         let path = path.unwrap_or("-");
