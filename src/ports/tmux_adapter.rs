@@ -18,4 +18,5 @@ pub trait TmuxAdapter {
     fn get_layout(&self, name: &str) -> Result<String>;
     fn get_panes(&self, name: &str) -> Result<Vec<SavedPane>>;
     fn apply_layout(&self, name: &str, layout_string: &str) -> Result<()>;
+    fn kill_session(&self, name: &str) -> Result<()>;
 }

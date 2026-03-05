@@ -115,4 +115,8 @@ impl TmuxAdapter for ShellTmuxAdapter {
     fn apply_layout(&self, name: &str, layout_string: &str) -> Result<()> {
         self.run_tmux(&["select-layout", "-t", name, layout_string])
     }
+
+    fn kill_session(&self, name: &str) -> Result<()> {
+        self.run_tmux(&["kill-session", "-t", name])
+    }
 }

@@ -5,6 +5,7 @@ pub mod claude_done;
 pub mod claudes;
 pub mod config;
 pub mod edit;
+pub mod format;
 pub mod list;
 pub mod new;
 pub mod note;
@@ -13,6 +14,7 @@ pub mod open;
 pub mod remove;
 pub mod reset;
 pub mod save;
+pub mod status;
 
 #[derive(Parser)]
 #[command(name = "devs", about = "Project-aware tmux session manager")]
@@ -42,6 +44,8 @@ pub enum Commands {
     },
     /// List all registered projects
     List,
+    /// Show all projects with live status
+    Status,
     /// Print a project's current config
     Config {
         /// Project name
@@ -59,6 +63,9 @@ pub enum Commands {
         /// Skip confirmation prompt
         #[arg(long)]
         force: bool,
+        /// Kill the tmux session if alive
+        #[arg(long)]
+        kill: bool,
     },
     /// Create or attach to a tmux session for a project
     Open {

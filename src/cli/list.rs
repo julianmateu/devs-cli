@@ -2,15 +2,30 @@ use anyhow::Result;
 
 use crate::ports::project_repository::ProjectRepository;
 
+use super::format::abbreviate_home;
+
 pub fn run(repo: &dyn ProjectRepository) -> Result<()> {
     let names = repo.list()?;
     if names.is_empty() {
         println!("No projects registered.");
-    } else {
-        for name in names {
-            println!("{name}");
-        }
+        return Ok(());
     }
+
+    let rows: Vec<(String, String)> = names
+        .iter()
+        .filter_map(|name| {
+            let config = repo.load(name).ok()?;
+            let path = abbreviate_home(&config.project.path);
+            Some((name.clone(), path))
+        })
+        .collect();
+
+    let w_name = rows.iter().map(|(n, _)| n.len()).max().unwrap_or(0);
+
+    for (name, path) in &rows {
+        println!("{name:<w_name$}   {path}");
+    }
+
     Ok(())
 }
 
@@ -34,6 +49,17 @@ mod tests {
         let repo = TomlProjectRepository::new(dir.path().to_path_buf());
         crate::cli::new::run(&repo, "test-project", "/some/path", None, None, &[]).unwrap();
 
+        assert!(run(&repo).is_ok());
+    }
+
+    #[test]
+    fn list_shows_paths() {
+        let dir = tempdir().unwrap();
+        let repo = TomlProjectRepository::new(dir.path().to_path_buf());
+        crate::cli::new::run(&repo, "alpha", "/usr/local/alpha", None, None, &[]).unwrap();
+        crate::cli::new::run(&repo, "beta", "/usr/local/beta", None, None, &[]).unwrap();
+
+        // Just verify it runs without error (output is visual)
         assert!(run(&repo).is_ok());
     }
 }

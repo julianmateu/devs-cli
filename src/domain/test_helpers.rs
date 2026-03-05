@@ -116,6 +116,13 @@ impl TmuxAdapter for MockTmuxAdapter {
             .push(format!("apply_layout({name}, {layout_string})"));
         Ok(())
     }
+
+    fn kill_session(&self, name: &str) -> Result<()> {
+        self.calls
+            .borrow_mut()
+            .push(format!("kill_session({name})"));
+        Ok(())
+    }
 }
 
 pub struct MockTerminalAdapter {

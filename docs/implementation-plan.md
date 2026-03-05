@@ -66,7 +66,7 @@ src/
 - End-to-end: `assert_cmd` crate for CLI smoke tests
 
 
-## Phase 1: Project scaffolding + CRUD
+## Phase 1: Project scaffolding + CRUD (COMPLETE)
 
 **Goal**: `devs new`, `devs list`, `devs status`, `devs config`, `devs edit`, `devs remove`
 
@@ -106,7 +106,7 @@ src/
    - Show last note and active Claude session count
 
 
-## Phase 2: tmux session management
+## Phase 2: tmux session management (COMPLETE)
 
 **Goal**: `devs open`, `devs save`, `devs reset`
 
@@ -149,7 +149,7 @@ src/
    - Called during `devs open` if project has a color
 
 
-## Phase 3: Claude session tracking
+## Phase 3: Claude session tracking (COMPLETE)
 
 **Goal**: `devs claude`, `devs claudes`, `devs claude-done`
 
@@ -179,7 +179,7 @@ src/
    - Load TOML, find session, update status and finished_at, save
 
 
-## Phase 4: Notes
+## Phase 4: Notes (COMPLETE)
 
 **Goal**: `devs note`, `devs notes`
 
@@ -195,9 +195,17 @@ src/
    - `devs notes <name> [--all] [--since <duration>] [--clear]`
 
 
-## Phase 5: Polish
+## Phase 5: Polish (COMPLETE)
 
-**Goal**: Error handling, edge cases, README
+**Goal**: Error handling, edge cases, remaining v1 features
+
+**Additions since initial plan:**
+- `devs new --from <project>`: copy layout from existing project
+- `devs new --session LABEL:ID`: pre-populate Claude sessions
+- `devs open`: `claude:<label>` expansion in layout pane commands
+- `devs remove --kill`: kill tmux session before removing
+- `devs status`: live dashboard with tmux liveness, active Claude count, last note
+- `devs list`: shows project paths alongside names
 
 ### Steps
 

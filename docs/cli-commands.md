@@ -15,8 +15,16 @@ devs new my-api --path ~/src/my-api
 |------|----------|-------------|
 | `--path <path>` | yes | Absolute path to the project directory |
 | `--color <hex>` | no | Tab color (`"#rrggbb"` or `"rrggbb"`) |
+| `--from <project>` | no | Copy layout from an existing project |
+| `--session <LABEL:ID>` | no | Pre-populate a Claude session (repeatable) |
+
+```bash
+devs new fork --path ~/src/fork --from rmbs-tool --session "implement:abc123"
+```
 
 Creates `~/.config/devs/projects/<name>.toml` with default layout.
+When `--from` is specified, copies the layout from the source project (not notes or saved state).
+When `--session` is specified, creates active Claude sessions with the given label and ID.
 Fails if a project with that name already exists.
 
 
@@ -62,11 +70,16 @@ Shows the most recent note (truncated).
 Remove a project from tracking.
 
 ```bash
-devs remove rmbs-tool
-devs remove rmbs-tool --kill    # also kill tmux session if alive
+devs remove rmbs-tool --force
+devs remove rmbs-tool --force --kill    # also kill tmux session if alive
 ```
 
-Deletes the TOML file. Asks for confirmation unless `--force` is passed.
+| Flag | Required | Description |
+|------|----------|-------------|
+| `--force` | yes | Confirm deletion |
+| `--kill` | no | Kill the tmux session if alive before removing |
+
+Deletes the TOML file. Requires `--force` to confirm.
 
 
 ### `devs edit <name>`
@@ -101,11 +114,17 @@ devs open rmbs-tool --saved      # always use saved state (fail if none)
 
 Behavior:
 1. If tmux session `<name>` already exists → attach to it
-2. If saved state exists → ask whether to restore or use default (unless `--default`/`--saved`)
+2. If saved state exists → use saved state (unless `--default`/`--saved`)
 3. Create tmux session from chosen layout
 4. Set tab color via escape sequences
 5. Print active Claude session hints
 6. Attach to the session
+
+**`claude:<label>` expansion**: In layout pane commands, `claude` and `claude:<label>` are expanded automatically:
+- `claude` → starts a new Claude session with label `"default"`, or resumes if one exists
+- `claude:brainstorm` → starts/resumes a Claude session with label `"brainstorm"`
+
+This allows declarative layouts to include Claude sessions that persist across `devs open` invocations.
 
 ### `devs save <name>`
 
