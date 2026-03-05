@@ -7,6 +7,8 @@ pub mod config;
 pub mod edit;
 pub mod list;
 pub mod new;
+pub mod note;
+pub mod notes;
 pub mod open;
 pub mod remove;
 pub mod reset;
@@ -97,5 +99,26 @@ pub enum Commands {
         name: String,
         /// Session ID
         id: String,
+    },
+    /// Add a timestamped note to a project
+    Note {
+        /// Project name
+        name: String,
+        /// Note message
+        message: String,
+    },
+    /// List notes for a project
+    Notes {
+        /// Project name
+        name: String,
+        /// Show all notes (default: last 20)
+        #[arg(long)]
+        all: bool,
+        /// Filter notes by time (e.g., "2d", "1h", "30m")
+        #[arg(long)]
+        since: Option<String>,
+        /// Delete all notes
+        #[arg(long)]
+        clear: bool,
     },
 }

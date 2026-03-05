@@ -56,6 +56,13 @@ fn main() -> Result<()> {
         },
         Commands::Claudes { name, all } => cli::claudes::run(&repo, &name, all)?,
         Commands::ClaudeDone { name, id } => cli::claude_done::run(&repo, &name, &id)?,
+        Commands::Note { name, message } => cli::note::run(&repo, &name, &message)?,
+        Commands::Notes {
+            name,
+            all,
+            since,
+            clear,
+        } => cli::notes::run(&repo, &name, all, since.as_deref(), clear)?,
     }
 
     Ok(())
