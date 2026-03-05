@@ -1,5 +1,6 @@
 use clap::{Parser, Subcommand};
 
+pub mod claude;
 pub mod config;
 pub mod edit;
 pub mod list;
@@ -69,5 +70,15 @@ pub enum Commands {
     Reset {
         /// Project name
         name: String,
+    },
+    /// Start or resume a Claude Code session
+    Claude {
+        /// Project name
+        name: String,
+        /// Session label (required when starting a new session)
+        label: Option<String>,
+        /// Resume a session by ID
+        #[arg(long)]
+        resume: Option<String>,
     },
 }

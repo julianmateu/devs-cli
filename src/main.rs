@@ -41,6 +41,19 @@ fn main() -> Result<()> {
         } => cli::open::run(&repo, &tmux, &terminal, &name, default, saved)?,
         Commands::Save { name } => cli::save::run(&repo, &tmux, &name)?,
         Commands::Reset { name } => cli::reset::run(&repo, &name)?,
+        Commands::Claude {
+            name,
+            label,
+            resume,
+        } => match resume {
+            Some(id) => cli::claude::resume(&repo, &name, &id)?,
+            None => {
+                let label = label.ok_or_else(|| {
+                    anyhow::anyhow!("label is required when starting a new session")
+                })?;
+                cli::claude::start(&repo, &name, &label)?
+            }
+        },
     }
 
     Ok(())
