@@ -5,6 +5,7 @@ use chrono::{DateTime, Utc};
 use serde::{Serialize, de::DeserializeOwned};
 
 use crate::domain::saved_state::SavedPane;
+use crate::ports::process_launcher::ProcessLauncher;
 use crate::ports::terminal_adapter::TerminalAdapter;
 use crate::ports::tmux_adapter::TmuxAdapter;
 
@@ -130,6 +131,32 @@ impl MockTerminalAdapter {
 
     pub fn calls(&self) -> Vec<String> {
         self.calls.borrow().clone()
+    }
+}
+
+pub struct MockProcessLauncher {
+    calls: RefCell<Vec<String>>,
+}
+
+impl MockProcessLauncher {
+    pub fn new() -> Self {
+        Self {
+            calls: RefCell::new(vec![]),
+        }
+    }
+
+    pub fn calls(&self) -> Vec<String> {
+        self.calls.borrow().clone()
+    }
+}
+
+impl ProcessLauncher for MockProcessLauncher {
+    fn launch_claude(&self, args: &[&str], working_dir: &str) -> Result<()> {
+        let args_str = args.join(", ");
+        self.calls
+            .borrow_mut()
+            .push(format!("launch_claude([{args_str}], {working_dir})"));
+        Ok(())
     }
 }
 

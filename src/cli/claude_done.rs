@@ -3,20 +3,20 @@ use anyhow::{Result, bail};
 use crate::domain::claude_session::ClaudeSessionStatus;
 use crate::ports::project_repository::ProjectRepository;
 
-pub fn run(repo: &dyn ProjectRepository, name: &str, id: &str) -> Result<()> {
+pub fn run(repo: &dyn ProjectRepository, name: &str, label: &str) -> Result<()> {
     let mut config = repo.load(name)?;
-    let session = config.claude_sessions.iter_mut().find(|s| s.id == id);
+    let session = config.claude_sessions.iter_mut().find(|s| s.label == label);
     match session {
         Some(session) => {
             if let ClaudeSessionStatus::Done(_) = session.status {
-                bail!("session '{id}' is already done");
+                bail!("session '{label}' is already done");
             }
             session.status = ClaudeSessionStatus::Done(chrono::Utc::now());
             repo.save(&config)?;
-            println!("Marked session '{id}' as done.");
+            println!("Marked session '{label}' as done.");
             Ok(())
         }
-        None => bail!("session '{id}' not found in project '{name}'"),
+        None => bail!("session '{label}' not found in project '{name}'"),
     }
 }
 
@@ -54,7 +54,7 @@ mod tests {
             }],
         );
 
-        run(&repo, "myproject", "session-1").unwrap();
+        run(&repo, "myproject", "brainstorm").unwrap();
 
         let config = repo.load("myproject").unwrap();
         assert!(matches!(
@@ -86,7 +86,7 @@ mod tests {
             }],
         );
 
-        let result = run(&repo, "myproject", "session-1");
+        let result = run(&repo, "myproject", "brainstorm");
         assert!(result.is_err());
         assert!(result.unwrap_err().to_string().contains("already done"));
     }
@@ -95,7 +95,7 @@ mod tests {
     fn done_fails_for_missing_project() {
         let (repo, _dir) = test_repo();
 
-        let result = run(&repo, "nonexistent", "some-id");
+        let result = run(&repo, "nonexistent", "some-label");
         assert!(result.is_err());
     }
 
@@ -120,7 +120,7 @@ mod tests {
             ],
         );
 
-        run(&repo, "myproject", "session-1").unwrap();
+        run(&repo, "myproject", "first").unwrap();
 
         let config = repo.load("myproject").unwrap();
         assert!(matches!(

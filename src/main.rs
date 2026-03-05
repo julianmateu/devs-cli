@@ -9,6 +9,7 @@ use anyhow::Result;
 use clap::Parser;
 
 use adapters::iterm_terminal_adapter::ItermTerminalAdapter;
+use adapters::os_process_launcher::OsProcessLauncher;
 use adapters::shell_tmux_adapter::ShellTmuxAdapter;
 use adapters::toml_project_repository::TomlProjectRepository;
 use cli::{Cli, Commands};
@@ -25,6 +26,7 @@ fn main() -> Result<()> {
     let repo = TomlProjectRepository::new(config_dir.clone());
     let tmux = ShellTmuxAdapter;
     let terminal = ItermTerminalAdapter::new();
+    let launcher = OsProcessLauncher;
 
     match cli.command {
         Commands::New { name, path, color } => {
@@ -46,16 +48,16 @@ fn main() -> Result<()> {
             label,
             resume,
         } => match resume {
-            Some(id) => cli::claude::resume(&repo, &name, &id)?,
+            Some(label) => cli::claude::resume(&repo, &launcher, &name, &label)?,
             None => {
                 let label = label.ok_or_else(|| {
                     anyhow::anyhow!("label is required when starting a new session")
                 })?;
-                cli::claude::start(&repo, &name, &label)?
+                cli::claude::start(&repo, &launcher, &name, &label)?
             }
         },
         Commands::Claudes { name, all } => cli::claudes::run(&repo, &name, all)?,
-        Commands::ClaudeDone { name, id } => cli::claude_done::run(&repo, &name, &id)?,
+        Commands::ClaudeDone { name, label } => cli::claude_done::run(&repo, &name, &label)?,
         Commands::Note { name, message } => cli::note::run(&repo, &name, &message)?,
         Commands::Notes {
             name,

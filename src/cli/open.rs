@@ -57,10 +57,7 @@ pub fn run(
 
     for session in &config.claude_sessions {
         if matches!(session.status, ClaudeSessionStatus::Active) {
-            println!(
-                "  devs claude {name} --resume {}   \"{}\"",
-                session.id, session.label
-            );
+            println!("  devs claude {name} --resume {}", session.label);
         }
     }
 

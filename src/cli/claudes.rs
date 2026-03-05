@@ -25,8 +25,8 @@ pub fn run(repo: &dyn ProjectRepository, name: &str, all: bool) -> Result<()> {
         };
         println!(
             "{}  {}  {}  [{}]",
-            session.id,
             session.label,
+            session.id,
             session.started_at.format("%Y-%m-%d %H:%M"),
             status,
         );

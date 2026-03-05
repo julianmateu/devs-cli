@@ -81,7 +81,7 @@ pub enum Commands {
         name: String,
         /// Session label (required when starting a new session)
         label: Option<String>,
-        /// Resume a session by ID
+        /// Resume a session by label
         #[arg(long)]
         resume: Option<String>,
     },
@@ -97,8 +97,8 @@ pub enum Commands {
     ClaudeDone {
         /// Project name
         name: String,
-        /// Session ID
-        id: String,
+        /// Session label
+        label: String,
     },
     /// Add a timestamped note to a project
     Note {
