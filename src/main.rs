@@ -54,6 +54,8 @@ fn main() -> Result<()> {
                 cli::claude::start(&repo, &name, &label)?
             }
         },
+        Commands::Claudes { name, all } => cli::claudes::run(&repo, &name, all)?,
+        Commands::ClaudeDone { name, id } => cli::claude_done::run(&repo, &name, &id)?,
     }
 
     Ok(())
