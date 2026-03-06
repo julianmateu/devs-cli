@@ -1,9 +1,32 @@
 use anyhow::{Result, bail};
 
 use crate::domain::layout::Layout;
-use crate::domain::saved_state::SavedState;
+use crate::domain::saved_state::{SavedPane, SavedState};
 use crate::ports::project_repository::ProjectRepository;
 use crate::ports::tmux_adapter::TmuxAdapter;
+
+fn collapse_claude_cmd(cmd: &str, project_name: &str) -> String {
+    let words: Vec<&str> = cmd.split_whitespace().collect();
+
+    // Match: devs claude <project_name> [--resume] <label>
+    if words.len() < 4 || words[0] != "devs" || words[1] != "claude" || words[2] != project_name {
+        return cmd.to_string();
+    }
+
+    let label = if words.len() == 5 && words[3] == "--resume" {
+        words[4]
+    } else if words.len() == 4 {
+        words[3]
+    } else {
+        return cmd.to_string();
+    };
+
+    if label == "default" {
+        "claude".to_string()
+    } else {
+        format!("claude:{label}")
+    }
+}
 
 pub fn save_layout(repo: &dyn ProjectRepository, tmux: &dyn TmuxAdapter, name: &str) -> Result<()> {
     let mut config = repo.load(name)?;
@@ -21,7 +44,14 @@ pub fn save_layout(repo: &dyn ProjectRepository, tmux: &dyn TmuxAdapter, name: &
 fn save_as_default(repo: &dyn ProjectRepository, tmux: &dyn TmuxAdapter, name: &str) -> Result<()> {
     let mut config = repo.load(name)?;
     let layout_string = tmux.get_layout(name)?;
-    let panes = tmux.get_panes(name)?;
+    let panes: Vec<SavedPane> = tmux
+        .get_panes(name)?
+        .into_iter()
+        .map(|mut p| {
+            p.command = collapse_claude_cmd(&p.command, name);
+            p
+        })
+        .collect();
     config.layout = Some(Layout::from_snapshot(layout_string, &panes));
     repo.save(&config)?;
     Ok(())
@@ -222,6 +252,104 @@ mod tests {
 
         let config = repo.load("myproject").unwrap();
         assert!(config.last_state.is_none());
+    }
+
+    #[test]
+    fn collapse_resume() {
+        assert_eq!(
+            collapse_claude_cmd("devs claude myproj --resume code-review", "myproj"),
+            "claude:code-review"
+        );
+    }
+
+    #[test]
+    fn collapse_start() {
+        assert_eq!(
+            collapse_claude_cmd("devs claude myproj brainstorm", "myproj"),
+            "claude:brainstorm"
+        );
+    }
+
+    #[test]
+    fn collapse_default_label() {
+        assert_eq!(
+            collapse_claude_cmd("devs claude myproj --resume default", "myproj"),
+            "claude"
+        );
+        assert_eq!(
+            collapse_claude_cmd("devs claude myproj default", "myproj"),
+            "claude"
+        );
+    }
+
+    #[test]
+    fn collapse_different_project_passthrough() {
+        assert_eq!(
+            collapse_claude_cmd("devs claude other-proj --resume code-review", "myproj"),
+            "devs claude other-proj --resume code-review"
+        );
+    }
+
+    #[test]
+    fn collapse_non_claude_passthrough() {
+        assert_eq!(collapse_claude_cmd("nvim", "myproj"), "nvim");
+        assert_eq!(collapse_claude_cmd("npm run dev", "myproj"), "npm run dev");
+    }
+
+    #[test]
+    fn save_as_default_collapses_devs_claude() {
+        let dir = tempdir().unwrap();
+        let repo = TomlProjectRepository::new(dir.path().to_path_buf());
+        crate::cli::new::run(&repo, "myproject", "/some/path", None, None, None, &[]).unwrap();
+
+        let tmux = MockTmuxAdapter::with_session(
+            "layout-str",
+            vec![
+                SavedPane {
+                    index: 0,
+                    path: "/some/path".to_string(),
+                    command: "nvim".to_string(),
+                },
+                SavedPane {
+                    index: 1,
+                    path: "/some/path".to_string(),
+                    command: "devs claude myproject --resume code-review".to_string(),
+                },
+            ],
+        );
+
+        run(&repo, &tmux, "myproject", true).unwrap();
+
+        let config = repo.load("myproject").unwrap();
+        let layout = config.layout.expect("layout should be set");
+        assert_eq!(layout.main.cmd, Some("nvim".to_string()));
+        assert_eq!(layout.panes.len(), 1);
+        assert_eq!(layout.panes[0].cmd, Some("claude:code-review".to_string()));
+    }
+
+    #[test]
+    fn save_layout_preserves_full_commands() {
+        let dir = tempdir().unwrap();
+        let repo = TomlProjectRepository::new(dir.path().to_path_buf());
+        crate::cli::new::run(&repo, "myproject", "/some/path", None, None, None, &[]).unwrap();
+
+        let tmux = MockTmuxAdapter::with_session(
+            "layout-str",
+            vec![SavedPane {
+                index: 0,
+                path: "/some/path".to_string(),
+                command: "devs claude myproject --resume code-review".to_string(),
+            }],
+        );
+
+        run(&repo, &tmux, "myproject", false).unwrap();
+
+        let config = repo.load("myproject").unwrap();
+        let state = config.last_state.expect("last_state should be set");
+        assert_eq!(
+            state.panes[0].command,
+            "devs claude myproject --resume code-review"
+        );
     }
 
     #[test]
