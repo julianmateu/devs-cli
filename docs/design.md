@@ -46,10 +46,10 @@
 - This is cross-project orchestration metadata — it doesn't belong in any single project
 - tmux layouts, Claude session IDs, and tab colors are personal dev environment state, not project state
 - Different machines may have different layouts for the same project
-- Keeps project repos clean (no `.devs.toml` cluttering git)
+- Keeps project repos clean (`.devs.toml` is opt-in via `devs init`)
 - Follows XDG Base Directory convention
 
-**Optional**: A future version could support an optional `.devs.toml` in the project root for shareable defaults (layout, color) that are committed to git. The `~/.config/devs/` file always takes precedence.
+**Shareable defaults**: `.devs.toml` is supported in project roots -- `devs init` exports a project's color and layout, and `devs new` auto-detects the file. The `~/.config/devs/` config always takes precedence.
 
 
 ## 3. `devs close` for ergonomic save-and-quit
