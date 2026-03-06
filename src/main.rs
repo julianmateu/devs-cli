@@ -5,21 +5,33 @@ mod ports;
 
 use std::path::PathBuf;
 
-use anyhow::{Result, bail};
+use anyhow::{Context, Result, bail};
 use clap::Parser;
 
 use adapters::iterm_terminal_adapter::ItermTerminalAdapter;
 use adapters::os_process_launcher::OsProcessLauncher;
 use adapters::shell_tmux_adapter::ShellTmuxAdapter;
+use adapters::toml_local_config::TomlLocalConfig;
 use adapters::toml_project_repository::TomlProjectRepository;
 use cli::{Cli, Commands};
 use domain::layout::Layout;
+use ports::local_config::LocalConfigReader;
 use ports::tmux_adapter::TmuxAdapter;
 
 fn config_dir() -> PathBuf {
     dirs::home_dir()
         .expect("could not determine home directory")
         .join(".config/devs")
+}
+
+fn resolve_path(path: Option<&str>) -> Result<String> {
+    match path {
+        Some(p) => Ok(cli::format::expand_home(p)),
+        None => {
+            let cwd = std::env::current_dir().context("failed to determine current directory")?;
+            Ok(cwd.to_string_lossy().to_string())
+        }
+    }
 }
 
 fn capture_layout_from_session(
@@ -45,6 +57,7 @@ fn main() -> Result<()> {
     let tmux = ShellTmuxAdapter;
     let terminal = ItermTerminalAdapter::new();
     let launcher = OsProcessLauncher;
+    let local_config_adapter = TomlLocalConfig;
 
     match cli.command {
         Commands::New {
@@ -55,17 +68,22 @@ fn main() -> Result<()> {
             from_session,
             sessions,
         } => {
+            let resolved_path = resolve_path(path.as_deref())?;
+            let local_config = local_config_adapter.read(&resolved_path)?;
             let captured_layout = capture_layout_from_session(&tmux, from_session.as_deref())?;
             cli::new::run(
                 &repo,
-                &name,
-                &path,
-                color.as_deref(),
-                from.as_deref(),
-                captured_layout,
-                &sessions,
+                cli::new::NewProjectParams {
+                    color: color.as_deref(),
+                    from: from.as_deref(),
+                    from_layout: captured_layout,
+                    sessions: &sessions,
+                    local_config,
+                    ..cli::new::NewProjectParams::new(&name, &resolved_path)
+                },
             )?
         }
+        Commands::Init { name } => cli::init::run(&repo, &local_config_adapter, &name)?,
         Commands::List => cli::list::run(&repo)?,
         Commands::Status => cli::status::run(&repo, &tmux)?,
         Commands::Config { name } => cli::config::run(&repo, &name)?,

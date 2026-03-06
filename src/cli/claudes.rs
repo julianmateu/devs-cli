@@ -49,7 +49,11 @@ mod tests {
     }
 
     fn create_project_with_sessions(repo: &TomlProjectRepository, sessions: Vec<ClaudeSession>) {
-        crate::cli::new::run(repo, "myproject", "/some/path", None, None, None, &[]).unwrap();
+        crate::cli::new::run(
+            repo,
+            crate::cli::new::NewProjectParams::new("myproject", "/some/path"),
+        )
+        .unwrap();
         let mut config = repo.load("myproject").unwrap();
         config.claude_sessions = sessions;
         repo.save(&config).unwrap();
@@ -109,7 +113,11 @@ mod tests {
     #[test]
     fn list_empty_sessions() {
         let (repo, _dir) = test_repo();
-        crate::cli::new::run(&repo, "myproject", "/some/path", None, None, None, &[]).unwrap();
+        crate::cli::new::run(
+            &repo,
+            crate::cli::new::NewProjectParams::new("myproject", "/some/path"),
+        )
+        .unwrap();
 
         let result = run(&repo, "myproject", false);
         assert!(result.is_ok());

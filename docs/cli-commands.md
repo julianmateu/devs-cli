@@ -13,7 +13,7 @@ devs new my-api --path ~/src/my-api
 
 | Flag | Required | Description |
 |------|----------|-------------|
-| `--path <path>` | yes | Absolute path to the project directory |
+| `--path <path>` | no | Project directory path (defaults to current directory) |
 | `--color <hex>` | no | Tab color (`"#rrggbb"` or `"rrggbb"`) |
 | `--from <project>` | no | Copy layout from an existing project |
 | `--from-session <name>` | no | Capture layout from a live tmux session (conflicts with `--from`) |
@@ -22,13 +22,28 @@ devs new my-api --path ~/src/my-api
 ```bash
 devs new fork --path ~/src/fork --from rmbs-tool --session "implement:abc123"
 devs new captured --path ~/src/captured --from-session my-api
+cd ~/src/my-api && devs new my-api    # --path defaults to CWD
 ```
 
 Creates `~/.config/devs/projects/<name>.toml` with default layout.
+When `--path` is omitted, the current working directory is used.
 When `--from` is specified, copies the layout from the source project (not notes or saved state).
 When `--from-session` is specified, captures the exact pane geometry and commands from a live tmux session.
 When `--session` is specified, creates active Claude sessions with the given label and ID.
 Fails if a project with that name already exists.
+
+**`.devs.toml` auto-detection**: If a `.devs.toml` file exists in the project directory, its `color` and `layout` are picked up automatically. Explicit flags (`--color`, `--from`, `--from-session`) override `.devs.toml` values. See the `.devs.toml` section below for the file format.
+
+
+### `devs init <name>`
+
+Export a project's color and layout to a `.devs.toml` file in the project's directory. This makes the config shareable -- team members can pick it up automatically with `devs new`.
+
+```bash
+devs init my-api
+```
+
+Writes `<project-path>/.devs.toml` with the project's `color` and `layout` (if set). Does not export Claude sessions, notes, or saved state.
 
 
 ### `devs list`
@@ -357,3 +372,27 @@ Print help for all commands.
 ### `devs <command> --help`
 
 Print help for a specific command.
+
+
+## `.devs.toml` format
+
+A `.devs.toml` file can be placed in a project's root directory to define shareable defaults. It uses a flat format with `color` and `layout` at the top level:
+
+```toml
+color = "#61afef"
+
+[layout.main]
+cmd = "nvim"
+
+[[layout.panes]]
+split = "right"
+cmd = "claude"
+size = "40%"
+
+[[layout.panes]]
+split = "bottom-right"
+```
+
+Both fields are optional. The `layout` section uses the same format as the `[layout]` section in project config files.
+
+Create a `.devs.toml` from an existing project with `devs init <name>`. When `devs new` is run, `.devs.toml` values are used as defaults -- explicit flags always override.

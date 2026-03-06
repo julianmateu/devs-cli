@@ -9,6 +9,7 @@ pub mod completions;
 pub mod config;
 pub mod edit;
 pub mod format;
+pub mod init;
 pub mod list;
 pub mod man;
 pub mod new;
@@ -34,9 +35,9 @@ pub enum Commands {
     New {
         /// Project name (used as tmux session name)
         name: String,
-        /// Absolute path to the project directory
+        /// Project directory path (defaults to current directory)
         #[arg(long)]
-        path: String,
+        path: Option<String>,
         /// Tab color in hex format (#rrggbb or rrggbb)
         #[arg(long)]
         color: Option<String>,
@@ -49,6 +50,11 @@ pub enum Commands {
         /// Pre-populate a Claude session (format: LABEL:ID, repeatable)
         #[arg(long = "session", value_name = "LABEL:ID")]
         sessions: Vec<String>,
+    },
+    /// Export project config to a shareable .devs.toml
+    Init {
+        /// Project name
+        name: String,
     },
     /// List all registered projects
     List,

@@ -101,7 +101,11 @@ mod tests {
     fn status_single_project_alive() {
         let dir = tempdir().unwrap();
         let repo = TomlProjectRepository::new(dir.path().to_path_buf());
-        crate::cli::new::run(&repo, "proj", "/some/path", None, None, None, &[]).unwrap();
+        crate::cli::new::run(
+            &repo,
+            crate::cli::new::NewProjectParams::new("proj", "/some/path"),
+        )
+        .unwrap();
         crate::cli::note::run(&repo, "proj", "implement step 4").unwrap();
 
         let tmux = MockTmuxAdapter::with_session("", vec![]);
@@ -113,7 +117,11 @@ mod tests {
     fn status_dead_session_no_notes() {
         let dir = tempdir().unwrap();
         let repo = TomlProjectRepository::new(dir.path().to_path_buf());
-        crate::cli::new::run(&repo, "proj", "/some/path", None, None, None, &[]).unwrap();
+        crate::cli::new::run(
+            &repo,
+            crate::cli::new::NewProjectParams::new("proj", "/some/path"),
+        )
+        .unwrap();
 
         let tmux = MockTmuxAdapter::no_session();
 
@@ -124,8 +132,16 @@ mod tests {
     fn status_multiple_projects() {
         let dir = tempdir().unwrap();
         let repo = TomlProjectRepository::new(dir.path().to_path_buf());
-        crate::cli::new::run(&repo, "alpha", "/some/alpha", None, None, None, &[]).unwrap();
-        crate::cli::new::run(&repo, "beta", "/some/beta", None, None, None, &[]).unwrap();
+        crate::cli::new::run(
+            &repo,
+            crate::cli::new::NewProjectParams::new("alpha", "/some/alpha"),
+        )
+        .unwrap();
+        crate::cli::new::run(
+            &repo,
+            crate::cli::new::NewProjectParams::new("beta", "/some/beta"),
+        )
+        .unwrap();
         crate::cli::note::run(&repo, "alpha", "note for alpha").unwrap();
 
         let tmux = MockTmuxAdapter::no_session();

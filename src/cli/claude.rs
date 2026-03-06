@@ -61,7 +61,11 @@ mod tests {
     }
 
     fn create_project(repo: &TomlProjectRepository, name: &str) {
-        crate::cli::new::run(repo, name, "/some/path", None, None, None, &[]).unwrap();
+        crate::cli::new::run(
+            repo,
+            crate::cli::new::NewProjectParams::new(name, "/some/path"),
+        )
+        .unwrap();
     }
 
     // --- start tests ---

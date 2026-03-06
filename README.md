@@ -115,21 +115,24 @@ devs open my-api
 
 | Command | Description |
 |---------|-------------|
-| `devs new <name> --path <path> [--color <hex>]` | Register a new project |
+| `devs new <name> [--path <path>] [--color <hex>]` | Register a new project |
 | `devs new <name> --from <project>` | Copy layout from an existing project |
 | `devs new <name> --from-session <session>` | Capture layout from a live tmux session |
+| `devs init <name>` | Export project config to a shareable `.devs.toml` |
 | `devs list` | List all registered projects |
 | `devs status` | Show all projects with live tmux/Claude status |
 | `devs config <name>` | Print a project's TOML config to stdout |
 | `devs edit <name>` | Open the project config in `$EDITOR` |
 | `devs remove <name> --force [--kill]` | Remove a project (`--kill` to also kill tmux session) |
 
-`devs new` accepts `--session LABEL:ID` (repeatable) to pre-populate Claude sessions, and `--path` expands `~` to `$HOME` automatically.
+`devs new` accepts `--session LABEL:ID` (repeatable) to pre-populate Claude sessions. `--path` defaults to the current directory and expands `~` to `$HOME`. If a `.devs.toml` file exists in the project directory, its color and layout are picked up automatically (explicit flags override).
 
 ```bash
 devs new frontend --path ~/src/frontend --color "#e06c75"
+cd ~/src/frontend && devs new frontend     # --path defaults to CWD
 devs new fork --from frontend --session "main:abc123"
 devs new captured --path ~/src/captured --from-session frontend
+devs init frontend                         # export config to .devs.toml
 devs list
 devs status
 devs config frontend
@@ -253,6 +256,36 @@ devs completions fish > ~/.config/fish/completions/devs.fish
 ```
 
 Fish loads completions from this directory automatically — no further setup needed.
+
+## Shareable config (`.devs.toml`)
+
+Place a `.devs.toml` file in a project's root directory to define a shareable layout and color. When `devs new` is run from that directory (or with `--path` pointing to it), the settings are picked up automatically.
+
+```toml
+# .devs.toml
+color = "#61afef"
+
+[layout.main]
+cmd = "nvim"
+
+[[layout.panes]]
+split = "right"
+cmd = "claude"
+size = "40%"
+
+[[layout.panes]]
+split = "bottom-right"
+```
+
+Explicit flags (`--color`, `--from`, `--from-session`) override `.devs.toml` values.
+
+To export an existing project's config to `.devs.toml`:
+
+```bash
+devs init my-api
+```
+
+This writes the project's color and layout to `.devs.toml` in the project's directory, so team members can pick it up with `devs new`.
 
 ## Configuration
 

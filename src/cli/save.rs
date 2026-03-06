@@ -89,7 +89,11 @@ mod tests {
     fn save_captures_tmux_state() {
         let dir = tempdir().unwrap();
         let repo = TomlProjectRepository::new(dir.path().to_path_buf());
-        crate::cli::new::run(&repo, "myproject", "/some/path", None, None, None, &[]).unwrap();
+        crate::cli::new::run(
+            &repo,
+            crate::cli::new::NewProjectParams::new("myproject", "/some/path"),
+        )
+        .unwrap();
 
         let tmux = MockTmuxAdapter::with_session(
             "5aed,176x79,0,0",
@@ -121,7 +125,11 @@ mod tests {
     fn save_fails_when_no_tmux_session() {
         let dir = tempdir().unwrap();
         let repo = TomlProjectRepository::new(dir.path().to_path_buf());
-        crate::cli::new::run(&repo, "myproject", "/some/path", None, None, None, &[]).unwrap();
+        crate::cli::new::run(
+            &repo,
+            crate::cli::new::NewProjectParams::new("myproject", "/some/path"),
+        )
+        .unwrap();
 
         let tmux = MockTmuxAdapter::no_session();
 
@@ -139,7 +147,11 @@ mod tests {
     fn save_overwrites_previous_saved_state() {
         let dir = tempdir().unwrap();
         let repo = TomlProjectRepository::new(dir.path().to_path_buf());
-        crate::cli::new::run(&repo, "myproject", "/some/path", None, None, None, &[]).unwrap();
+        crate::cli::new::run(
+            &repo,
+            crate::cli::new::NewProjectParams::new("myproject", "/some/path"),
+        )
+        .unwrap();
 
         // First save
         let tmux = MockTmuxAdapter::with_session("old-layout", vec![]);
@@ -167,7 +179,11 @@ mod tests {
     fn save_as_default_writes_layout() {
         let dir = tempdir().unwrap();
         let repo = TomlProjectRepository::new(dir.path().to_path_buf());
-        crate::cli::new::run(&repo, "myproject", "/some/path", None, None, None, &[]).unwrap();
+        crate::cli::new::run(
+            &repo,
+            crate::cli::new::NewProjectParams::new("myproject", "/some/path"),
+        )
+        .unwrap();
 
         let tmux = MockTmuxAdapter::with_session(
             "5aed,176x79,0,0",
@@ -205,7 +221,11 @@ mod tests {
     fn save_as_default_replaces_existing_layout() {
         let dir = tempdir().unwrap();
         let repo = TomlProjectRepository::new(dir.path().to_path_buf());
-        crate::cli::new::run(&repo, "myproject", "/some/path", None, None, None, &[]).unwrap();
+        crate::cli::new::run(
+            &repo,
+            crate::cli::new::NewProjectParams::new("myproject", "/some/path"),
+        )
+        .unwrap();
 
         // Set an existing declarative layout
         let mut config = repo.load("myproject").unwrap();
@@ -244,7 +264,11 @@ mod tests {
     fn save_as_default_does_not_touch_last_state() {
         let dir = tempdir().unwrap();
         let repo = TomlProjectRepository::new(dir.path().to_path_buf());
-        crate::cli::new::run(&repo, "myproject", "/some/path", None, None, None, &[]).unwrap();
+        crate::cli::new::run(
+            &repo,
+            crate::cli::new::NewProjectParams::new("myproject", "/some/path"),
+        )
+        .unwrap();
 
         let tmux = MockTmuxAdapter::with_session("layout", vec![]);
 
@@ -300,7 +324,11 @@ mod tests {
     fn save_as_default_collapses_devs_claude() {
         let dir = tempdir().unwrap();
         let repo = TomlProjectRepository::new(dir.path().to_path_buf());
-        crate::cli::new::run(&repo, "myproject", "/some/path", None, None, None, &[]).unwrap();
+        crate::cli::new::run(
+            &repo,
+            crate::cli::new::NewProjectParams::new("myproject", "/some/path"),
+        )
+        .unwrap();
 
         let tmux = MockTmuxAdapter::with_session(
             "layout-str",
@@ -331,7 +359,11 @@ mod tests {
     fn save_layout_preserves_full_commands() {
         let dir = tempdir().unwrap();
         let repo = TomlProjectRepository::new(dir.path().to_path_buf());
-        crate::cli::new::run(&repo, "myproject", "/some/path", None, None, None, &[]).unwrap();
+        crate::cli::new::run(
+            &repo,
+            crate::cli::new::NewProjectParams::new("myproject", "/some/path"),
+        )
+        .unwrap();
 
         let tmux = MockTmuxAdapter::with_session(
             "layout-str",
@@ -356,7 +388,11 @@ mod tests {
     fn save_as_default_fails_when_no_tmux_session() {
         let dir = tempdir().unwrap();
         let repo = TomlProjectRepository::new(dir.path().to_path_buf());
-        crate::cli::new::run(&repo, "myproject", "/some/path", None, None, None, &[]).unwrap();
+        crate::cli::new::run(
+            &repo,
+            crate::cli::new::NewProjectParams::new("myproject", "/some/path"),
+        )
+        .unwrap();
 
         let tmux = MockTmuxAdapter::no_session();
 

@@ -110,6 +110,39 @@ fn tmux_help_prints_reference() {
 }
 
 #[test]
+fn new_path_is_optional_in_help() {
+    // --path should be listed under [OPTIONS], not as a required argument
+    Command::cargo_bin("devs")
+        .unwrap()
+        .args(["new", "--help"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("[OPTIONS]"))
+        .stdout(predicate::str::contains("--path"))
+        .stdout(predicate::str::contains("defaults to current directory"));
+}
+
+#[test]
+fn init_requires_name_argument() {
+    Command::cargo_bin("devs")
+        .unwrap()
+        .args(["init"])
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains("<NAME>").or(predicate::str::contains("required")));
+}
+
+#[test]
+fn init_help_shows_description() {
+    Command::cargo_bin("devs")
+        .unwrap()
+        .args(["init", "--help"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains(".devs.toml"));
+}
+
+#[test]
 fn docs_mention_all_subcommands() {
     let output = Command::cargo_bin("devs")
         .unwrap()

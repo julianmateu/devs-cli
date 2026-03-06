@@ -19,7 +19,11 @@ mod tests {
     fn config_prints_existing_project() {
         let dir = tempdir().unwrap();
         let repo = TomlProjectRepository::new(dir.path().to_path_buf());
-        crate::cli::new::run(&repo, "test-project", "/some/path", None, None, None, &[]).unwrap();
+        crate::cli::new::run(
+            &repo,
+            crate::cli::new::NewProjectParams::new("test-project", "/some/path"),
+        )
+        .unwrap();
 
         assert!(run(&repo, "test-project").is_ok());
     }

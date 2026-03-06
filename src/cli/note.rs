@@ -30,7 +30,11 @@ mod tests {
     #[test]
     fn note_adds_to_project() {
         let (repo, _dir) = test_repo();
-        crate::cli::new::run(&repo, "myproject", "/some/path", None, None, None, &[]).unwrap();
+        crate::cli::new::run(
+            &repo,
+            crate::cli::new::NewProjectParams::new("myproject", "/some/path"),
+        )
+        .unwrap();
 
         run(&repo, "myproject", "picking up from step 4").unwrap();
 
@@ -42,7 +46,11 @@ mod tests {
     #[test]
     fn note_appends_to_existing_notes() {
         let (repo, _dir) = test_repo();
-        crate::cli::new::run(&repo, "myproject", "/some/path", None, None, None, &[]).unwrap();
+        crate::cli::new::run(
+            &repo,
+            crate::cli::new::NewProjectParams::new("myproject", "/some/path"),
+        )
+        .unwrap();
 
         run(&repo, "myproject", "first note").unwrap();
         run(&repo, "myproject", "second note").unwrap();
@@ -64,7 +72,11 @@ mod tests {
     #[test]
     fn note_sets_created_at() {
         let (repo, _dir) = test_repo();
-        crate::cli::new::run(&repo, "myproject", "/some/path", None, None, None, &[]).unwrap();
+        crate::cli::new::run(
+            &repo,
+            crate::cli::new::NewProjectParams::new("myproject", "/some/path"),
+        )
+        .unwrap();
 
         let before = chrono::Utc::now();
         run(&repo, "myproject", "timestamped").unwrap();

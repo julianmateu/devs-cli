@@ -1,25 +1,9 @@
 # Implementation Plan
 
-## 1. Man pages (`devs generate-man`)
+## 1. Man pages (`devs generate-man`) ✅
 
-Generate man pages from clap metadata using `clap_mangen`.
-
-### Design
-- Add `clap_mangen` dependency
-- New CLI command: `devs generate-man <output-dir>`
-- Handler in `src/cli/man.rs` -- follows same pattern as `completions.rs`
-- Generates one man page per subcommand + main page
-
-### Files
-- `Cargo.toml` -- add `clap_mangen`
-- `src/cli/man.rs` -- handler
-- `src/cli/mod.rs` -- add variant + module
-- `src/main.rs` -- add match arm
-- `tests/cli_tests.rs` -- integration test
-
-### Tests
-- Integration: `devs generate-man /tmp/test-man` produces files
-- Integration: generated files contain expected content
+Implemented in commit 8e2ce3d. Generates man pages from clap metadata using `clap_mangen`.
+3 integration tests (files created, valid roff, creates output directory). Docs updated.
 
 
 ## 2. tmux help (`devs tmux-help`)
@@ -67,4 +51,6 @@ Allow a `.devs.toml` file in the project root that defines layout and color. Whe
 
 ### Open questions
 - Should `.devs.toml` support `claude_sessions`? Probably not -- those are per-user.
+<!-- REVIEWER: No -->
 - Should `devs init` create a `.devs.toml` from the current project config? Nice to have.
+<!-- REVIEWER: Yes -->

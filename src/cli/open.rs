@@ -196,12 +196,10 @@ mod tests {
         let (_dir, repo) = setup_repo();
         crate::cli::new::run(
             &repo,
-            "myproj",
-            "/some/path",
-            Some("#e06c75"),
-            None,
-            None,
-            &[],
+            crate::cli::new::NewProjectParams {
+                color: Some("#e06c75"),
+                ..crate::cli::new::NewProjectParams::new("myproj", "/some/path")
+            },
         )
         .unwrap();
 
@@ -220,7 +218,11 @@ mod tests {
     #[test]
     fn errors_with_both_flags() {
         let (_dir, repo) = setup_repo();
-        crate::cli::new::run(&repo, "myproj", "/some/path", None, None, None, &[]).unwrap();
+        crate::cli::new::run(
+            &repo,
+            crate::cli::new::NewProjectParams::new("myproj", "/some/path"),
+        )
+        .unwrap();
 
         let tmux = MockTmuxAdapter::no_session();
         let terminal = MockTerminalAdapter::new();
@@ -238,7 +240,11 @@ mod tests {
     #[test]
     fn saved_flag_errors_without_saved_state() {
         let (_dir, repo) = setup_repo();
-        crate::cli::new::run(&repo, "myproj", "/some/path", None, None, None, &[]).unwrap();
+        crate::cli::new::run(
+            &repo,
+            crate::cli::new::NewProjectParams::new("myproj", "/some/path"),
+        )
+        .unwrap();
 
         let tmux = MockTmuxAdapter::no_session();
         let terminal = MockTerminalAdapter::new();
@@ -251,7 +257,11 @@ mod tests {
     #[test]
     fn creates_minimal_session_without_layout() {
         let (_dir, repo) = setup_repo();
-        crate::cli::new::run(&repo, "myproj", "/some/path", None, None, None, &[]).unwrap();
+        crate::cli::new::run(
+            &repo,
+            crate::cli::new::NewProjectParams::new("myproj", "/some/path"),
+        )
+        .unwrap();
 
         let tmux = MockTmuxAdapter::no_session();
         let terminal = MockTerminalAdapter::new();
@@ -268,7 +278,11 @@ mod tests {
     #[test]
     fn creates_declarative_layout_with_splits() {
         let (_dir, repo) = setup_repo();
-        crate::cli::new::run(&repo, "myproj", "/some/path", None, None, None, &[]).unwrap();
+        crate::cli::new::run(
+            &repo,
+            crate::cli::new::NewProjectParams::new("myproj", "/some/path"),
+        )
+        .unwrap();
 
         // Add a layout with main cmd + right split + bottom-right split
         let mut config = repo.load("myproj").unwrap();
@@ -315,7 +329,11 @@ mod tests {
     #[test]
     fn default_flag_uses_declarative_over_saved() {
         let (_dir, repo) = setup_repo();
-        crate::cli::new::run(&repo, "myproj", "/some/path", None, None, None, &[]).unwrap();
+        crate::cli::new::run(
+            &repo,
+            crate::cli::new::NewProjectParams::new("myproj", "/some/path"),
+        )
+        .unwrap();
 
         // Add both a layout and saved state
         let mut config = repo.load("myproj").unwrap();
@@ -349,7 +367,11 @@ mod tests {
     #[test]
     fn prefers_saved_state_when_no_flags() {
         let (_dir, repo) = setup_repo();
-        crate::cli::new::run(&repo, "myproj", "/some/path", None, None, None, &[]).unwrap();
+        crate::cli::new::run(
+            &repo,
+            crate::cli::new::NewProjectParams::new("myproj", "/some/path"),
+        )
+        .unwrap();
 
         let mut config = repo.load("myproj").unwrap();
         config.layout = Some(Layout {
@@ -383,7 +405,11 @@ mod tests {
     #[test]
     fn creates_from_saved_state_skipping_shells() {
         let (_dir, repo) = setup_repo();
-        crate::cli::new::run(&repo, "myproj", "/some/path", None, None, None, &[]).unwrap();
+        crate::cli::new::run(
+            &repo,
+            crate::cli::new::NewProjectParams::new("myproj", "/some/path"),
+        )
+        .unwrap();
 
         let mut config = repo.load("myproj").unwrap();
         config.last_state = Some(SavedState {
@@ -434,12 +460,10 @@ mod tests {
         let (_dir, repo) = setup_repo();
         crate::cli::new::run(
             &repo,
-            "myproj",
-            "/some/path",
-            Some("#e06c75"),
-            None,
-            None,
-            &[],
+            crate::cli::new::NewProjectParams {
+                color: Some("#e06c75"),
+                ..crate::cli::new::NewProjectParams::new("myproj", "/some/path")
+            },
         )
         .unwrap();
 
@@ -514,7 +538,11 @@ mod tests {
     #[test]
     fn open_expands_claude_shorthand_in_layout() {
         let (_dir, repo) = setup_repo();
-        crate::cli::new::run(&repo, "myproj", "/some/path", None, None, None, &[]).unwrap();
+        crate::cli::new::run(
+            &repo,
+            crate::cli::new::NewProjectParams::new("myproj", "/some/path"),
+        )
+        .unwrap();
 
         let mut config = repo.load("myproj").unwrap();
         config.layout = Some(Layout {
@@ -552,7 +580,11 @@ mod tests {
     #[test]
     fn handles_active_claude_sessions() {
         let (_dir, repo) = setup_repo();
-        crate::cli::new::run(&repo, "myproj", "/some/path", None, None, None, &[]).unwrap();
+        crate::cli::new::run(
+            &repo,
+            crate::cli::new::NewProjectParams::new("myproj", "/some/path"),
+        )
+        .unwrap();
 
         let mut config = repo.load("myproj").unwrap();
         config.claude_sessions = vec![
@@ -581,7 +613,11 @@ mod tests {
     #[test]
     fn open_applies_layout_string_from_declarative() {
         let (_dir, repo) = setup_repo();
-        crate::cli::new::run(&repo, "myproj", "/some/path", None, None, None, &[]).unwrap();
+        crate::cli::new::run(
+            &repo,
+            crate::cli::new::NewProjectParams::new("myproj", "/some/path"),
+        )
+        .unwrap();
 
         let mut config = repo.load("myproj").unwrap();
         config.layout = Some(Layout {

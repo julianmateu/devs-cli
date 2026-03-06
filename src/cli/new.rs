@@ -1,31 +1,63 @@
 use anyhow::{Result, bail};
 
-use super::format::expand_home;
 use crate::domain::claude_session::{ClaudeSession, ClaudeSessionStatus};
 use crate::domain::layout::Layout;
+use crate::domain::local_config::LocalConfig;
 use crate::domain::project::{ProjectConfig, ProjectMetadata};
 use crate::ports::project_repository::ProjectRepository;
 
-pub fn run(
-    repo: &dyn ProjectRepository,
-    name: &str,
-    path: &str,
-    color: Option<&str>,
-    from: Option<&str>,
-    from_layout: Option<Layout>,
-    sessions: &[String],
-) -> Result<()> {
+pub struct NewProjectParams<'a> {
+    pub name: &'a str,
+    pub path: &'a str,
+    pub color: Option<&'a str>,
+    pub from: Option<&'a str>,
+    pub from_layout: Option<Layout>,
+    pub sessions: &'a [String],
+    pub local_config: Option<LocalConfig>,
+}
+
+impl<'a> NewProjectParams<'a> {
+    pub fn new(name: &'a str, path: &'a str) -> Self {
+        Self {
+            name,
+            path,
+            color: None,
+            from: None,
+            from_layout: None,
+            sessions: &[],
+            local_config: None,
+        }
+    }
+}
+
+pub fn run(repo: &dyn ProjectRepository, params: NewProjectParams) -> Result<()> {
+    let NewProjectParams {
+        name,
+        path,
+        color,
+        from,
+        from_layout,
+        sessions,
+        local_config,
+    } = params;
+
     if repo.load(name).is_ok() {
         bail!("project '{name}' already exists");
     }
 
+    let resolved_color = color
+        .map(String::from)
+        .or_else(|| local_config.as_ref().and_then(|lc| lc.color.clone()));
+
     let metadata = ProjectMetadata {
         name: String::from(name),
-        path: expand_home(path),
-        color: color.map(String::from),
+        path: String::from(path),
+        color: resolved_color,
         created_at: chrono::Utc::now(),
     };
     metadata.validate()?;
+
+    let had_local_config = local_config.is_some();
 
     let layout = if from_layout.is_some() {
         from_layout
@@ -33,7 +65,7 @@ pub fn run(
         let source = repo.load(source_name)?;
         source.layout
     } else {
-        None
+        local_config.and_then(|lc| lc.layout)
     };
 
     let claude_sessions = parse_sessions(sessions)?;
@@ -51,6 +83,8 @@ pub fn run(
         println!(
             "Created project '{name}' from '{source_name}'. Run 'devs edit {name}' to review the config."
         );
+    } else if had_local_config {
+        println!("Created project '{name}' (using .devs.toml).");
     } else {
         println!("Created project '{name}'.");
     }
@@ -95,7 +129,7 @@ mod tests {
     fn new_creates_project() {
         let (repo, _dir) = test_repo();
 
-        run(&repo, "my-project", "/some/path", None, None, None, &[]).unwrap();
+        run(&repo, NewProjectParams::new("my-project", "/some/path")).unwrap();
 
         let config = repo.load("my-project").unwrap();
         assert_eq!(config.project.name, "my-project");
@@ -112,12 +146,10 @@ mod tests {
 
         run(
             &repo,
-            "my-project",
-            "/some/path",
-            Some("#e06c75"),
-            None,
-            None,
-            &[],
+            NewProjectParams {
+                color: Some("#e06c75"),
+                ..NewProjectParams::new("my-project", "/some/path")
+            },
         )
         .unwrap();
 
@@ -129,8 +161,8 @@ mod tests {
     fn new_rejects_duplicate_name() {
         let (repo, _dir) = test_repo();
 
-        run(&repo, "my-project", "/some/path", None, None, None, &[]).unwrap();
-        let result = run(&repo, "my-project", "/other/path", None, None, None, &[]);
+        run(&repo, NewProjectParams::new("my-project", "/some/path")).unwrap();
+        let result = run(&repo, NewProjectParams::new("my-project", "/other/path"));
 
         assert!(result.is_err());
     }
@@ -139,7 +171,7 @@ mod tests {
     fn new_rejects_invalid_name() {
         let (repo, _dir) = test_repo();
 
-        let result = run(&repo, "bad.name", "/some/path", None, None, None, &[]);
+        let result = run(&repo, NewProjectParams::new("bad.name", "/some/path"));
         assert!(result.is_err());
     }
 
@@ -149,12 +181,10 @@ mod tests {
 
         let result = run(
             &repo,
-            "my-project",
-            "/some/path",
-            Some("not-hex"),
-            None,
-            None,
-            &[],
+            NewProjectParams {
+                color: Some("not-hex"),
+                ..NewProjectParams::new("my-project", "/some/path")
+            },
         );
         assert!(result.is_err());
     }
@@ -163,8 +193,7 @@ mod tests {
     fn from_copies_layout() {
         let (repo, _dir) = test_repo();
 
-        // Create source with a layout
-        run(&repo, "source", "/src/path", None, None, None, &[]).unwrap();
+        run(&repo, NewProjectParams::new("source", "/src/path")).unwrap();
         let mut source_config = repo.load("source").unwrap();
         source_config.layout = Some(Layout {
             main: MainPane {
@@ -179,15 +208,12 @@ mod tests {
         });
         repo.save(&source_config).unwrap();
 
-        // Create new project from source
         run(
             &repo,
-            "target",
-            "/tgt/path",
-            None,
-            Some("source"),
-            None,
-            &[],
+            NewProjectParams {
+                from: Some("source"),
+                ..NewProjectParams::new("target", "/tgt/path")
+            },
         )
         .unwrap();
 
@@ -199,7 +225,7 @@ mod tests {
     fn from_does_not_copy_notes_or_last_state() {
         let (repo, _dir) = test_repo();
 
-        run(&repo, "source", "/src/path", None, None, None, &[]).unwrap();
+        run(&repo, NewProjectParams::new("source", "/src/path")).unwrap();
         let mut source_config = repo.load("source").unwrap();
         source_config.notes = vec![Note {
             content: "some note".to_string(),
@@ -218,12 +244,10 @@ mod tests {
 
         run(
             &repo,
-            "target",
-            "/tgt/path",
-            None,
-            Some("source"),
-            None,
-            &[],
+            NewProjectParams {
+                from: Some("source"),
+                ..NewProjectParams::new("target", "/tgt/path")
+            },
         )
         .unwrap();
 
@@ -238,23 +262,20 @@ mod tests {
 
         run(
             &repo,
-            "source",
-            "/src/path",
-            Some("#111111"),
-            None,
-            None,
-            &[],
+            NewProjectParams {
+                color: Some("#111111"),
+                ..NewProjectParams::new("source", "/src/path")
+            },
         )
         .unwrap();
 
         run(
             &repo,
-            "target",
-            "/tgt/path",
-            Some("#222222"),
-            Some("source"),
-            None,
-            &[],
+            NewProjectParams {
+                color: Some("#222222"),
+                from: Some("source"),
+                ..NewProjectParams::new("target", "/tgt/path")
+            },
         )
         .unwrap();
 
@@ -268,17 +289,16 @@ mod tests {
     fn from_with_session_creates_session() {
         let (repo, _dir) = test_repo();
 
-        run(&repo, "source", "/src/path", None, None, None, &[]).unwrap();
+        run(&repo, NewProjectParams::new("source", "/src/path")).unwrap();
 
         let sessions = vec!["main:abc123".to_string()];
         run(
             &repo,
-            "target",
-            "/tgt/path",
-            None,
-            Some("source"),
-            None,
-            &sessions,
+            NewProjectParams {
+                from: Some("source"),
+                sessions: &sessions,
+                ..NewProjectParams::new("target", "/tgt/path")
+            },
         )
         .unwrap();
 
@@ -296,17 +316,16 @@ mod tests {
     fn from_with_multiple_sessions() {
         let (repo, _dir) = test_repo();
 
-        run(&repo, "source", "/src/path", None, None, None, &[]).unwrap();
+        run(&repo, NewProjectParams::new("source", "/src/path")).unwrap();
 
         let sessions = vec!["main:abc123".to_string(), "review:def456".to_string()];
         run(
             &repo,
-            "target",
-            "/tgt/path",
-            None,
-            Some("source"),
-            None,
-            &sessions,
+            NewProjectParams {
+                from: Some("source"),
+                sessions: &sessions,
+                ..NewProjectParams::new("target", "/tgt/path")
+            },
         )
         .unwrap();
 
@@ -320,16 +339,13 @@ mod tests {
     fn from_with_no_sessions_creates_none() {
         let (repo, _dir) = test_repo();
 
-        run(&repo, "source", "/src/path", None, None, None, &[]).unwrap();
-
+        run(&repo, NewProjectParams::new("source", "/src/path")).unwrap();
         run(
             &repo,
-            "target",
-            "/tgt/path",
-            None,
-            Some("source"),
-            None,
-            &[],
+            NewProjectParams {
+                from: Some("source"),
+                ..NewProjectParams::new("target", "/tgt/path")
+            },
         )
         .unwrap();
 
@@ -343,12 +359,10 @@ mod tests {
 
         let result = run(
             &repo,
-            "target",
-            "/tgt/path",
-            None,
-            Some("nonexistent"),
-            None,
-            &[],
+            NewProjectParams {
+                from: Some("nonexistent"),
+                ..NewProjectParams::new("target", "/tgt/path")
+            },
         );
         assert!(result.is_err());
     }
@@ -357,48 +371,32 @@ mod tests {
     fn from_with_invalid_session_format_fails() {
         let (repo, _dir) = test_repo();
 
-        run(&repo, "source", "/src/path", None, None, None, &[]).unwrap();
+        run(&repo, NewProjectParams::new("source", "/src/path")).unwrap();
 
         let sessions = vec!["no-colon-here".to_string()];
         let result = run(
             &repo,
-            "target",
-            "/tgt/path",
-            None,
-            Some("source"),
-            None,
-            &sessions,
+            NewProjectParams {
+                from: Some("source"),
+                sessions: &sessions,
+                ..NewProjectParams::new("target", "/tgt/path")
+            },
         );
         assert!(result.is_err());
         assert!(result.unwrap_err().to_string().contains("LABEL:ID"));
     }
 
     #[test]
-    fn new_expands_tilde_in_path() {
-        let (repo, _dir) = test_repo();
-        let home = dirs::home_dir().unwrap();
-
-        run(&repo, "tilded", "~/some/project", None, None, None, &[]).unwrap();
-
-        let config = repo.load("tilded").unwrap();
-        let expected = format!("{}/some/project", home.display());
-        assert_eq!(config.project.path, expected);
-    }
-
-    #[test]
     fn from_works_when_source_has_no_layout() {
         let (repo, _dir) = test_repo();
 
-        run(&repo, "source", "/src/path", None, None, None, &[]).unwrap();
-
+        run(&repo, NewProjectParams::new("source", "/src/path")).unwrap();
         run(
             &repo,
-            "target",
-            "/tgt/path",
-            None,
-            Some("source"),
-            None,
-            &[],
+            NewProjectParams {
+                from: Some("source"),
+                ..NewProjectParams::new("target", "/tgt/path")
+            },
         )
         .unwrap();
 
@@ -433,12 +431,10 @@ mod tests {
 
         run(
             &repo,
-            "my-project",
-            "/some/path",
-            None,
-            None,
-            Some(captured),
-            &[],
+            NewProjectParams {
+                from_layout: Some(captured),
+                ..NewProjectParams::new("my-project", "/some/path")
+            },
         )
         .unwrap();
 
@@ -455,8 +451,7 @@ mod tests {
     fn new_from_layout_takes_priority_over_from() {
         let (repo, _dir) = test_repo();
 
-        // Create a source project with a different layout
-        run(&repo, "source", "/src/path", None, None, None, &[]).unwrap();
+        run(&repo, NewProjectParams::new("source", "/src/path")).unwrap();
         let mut source_config = repo.load("source").unwrap();
         source_config.layout = Some(Layout {
             main: MainPane {
@@ -467,7 +462,6 @@ mod tests {
         });
         repo.save(&source_config).unwrap();
 
-        // Create with both from and from_layout — from_layout wins
         let captured = Layout::from_snapshot(
             "captured-layout".to_string(),
             &[SavedPane {
@@ -479,12 +473,11 @@ mod tests {
 
         run(
             &repo,
-            "target",
-            "/tgt/path",
-            None,
-            Some("source"),
-            Some(captured),
-            &[],
+            NewProjectParams {
+                from: Some("source"),
+                from_layout: Some(captured),
+                ..NewProjectParams::new("target", "/tgt/path")
+            },
         )
         .unwrap();
 
@@ -492,5 +485,194 @@ mod tests {
         let layout = config.layout.expect("layout should be set");
         assert_eq!(layout.layout_string, Some("captured-layout".to_string()));
         assert_eq!(layout.main.cmd, Some("nvim".to_string()));
+    }
+
+    // --- Local config merge tests ---
+
+    fn sample_local_config() -> LocalConfig {
+        LocalConfig {
+            color: Some("#aabbcc".to_string()),
+            layout: Some(Layout {
+                main: MainPane {
+                    cmd: Some("nvim".to_string()),
+                },
+                panes: vec![SplitPane {
+                    split: SplitDirection::Right,
+                    cmd: Some("claude".to_string()),
+                    size: Some("40%".to_string()),
+                }],
+                layout_string: None,
+            }),
+        }
+    }
+
+    #[test]
+    fn local_config_provides_color() {
+        let (repo, _dir) = test_repo();
+
+        run(
+            &repo,
+            NewProjectParams {
+                local_config: Some(LocalConfig {
+                    color: Some("#aabbcc".to_string()),
+                    layout: None,
+                }),
+                ..NewProjectParams::new("my-project", "/some/path")
+            },
+        )
+        .unwrap();
+
+        let config = repo.load("my-project").unwrap();
+        assert_eq!(config.project.color, Some("#aabbcc".to_string()));
+    }
+
+    #[test]
+    fn flag_color_overrides_local_config() {
+        let (repo, _dir) = test_repo();
+
+        run(
+            &repo,
+            NewProjectParams {
+                color: Some("#ffffff"),
+                local_config: Some(LocalConfig {
+                    color: Some("#aabbcc".to_string()),
+                    layout: None,
+                }),
+                ..NewProjectParams::new("my-project", "/some/path")
+            },
+        )
+        .unwrap();
+
+        let config = repo.load("my-project").unwrap();
+        assert_eq!(config.project.color, Some("#ffffff".to_string()));
+    }
+
+    #[test]
+    fn local_config_provides_layout() {
+        let (repo, _dir) = test_repo();
+        let lc = sample_local_config();
+        let expected_layout = lc.layout.clone();
+
+        run(
+            &repo,
+            NewProjectParams {
+                local_config: Some(lc),
+                ..NewProjectParams::new("my-project", "/some/path")
+            },
+        )
+        .unwrap();
+
+        let config = repo.load("my-project").unwrap();
+        assert_eq!(config.layout, expected_layout);
+    }
+
+    #[test]
+    fn from_overrides_local_config_layout() {
+        let (repo, _dir) = test_repo();
+
+        run(&repo, NewProjectParams::new("source", "/src/path")).unwrap();
+        let mut source_config = repo.load("source").unwrap();
+        let source_layout = Layout {
+            main: MainPane {
+                cmd: Some("emacs".to_string()),
+            },
+            panes: vec![],
+            layout_string: None,
+        };
+        source_config.layout = Some(source_layout.clone());
+        repo.save(&source_config).unwrap();
+
+        run(
+            &repo,
+            NewProjectParams {
+                from: Some("source"),
+                local_config: Some(sample_local_config()),
+                ..NewProjectParams::new("target", "/tgt/path")
+            },
+        )
+        .unwrap();
+
+        let config = repo.load("target").unwrap();
+        assert_eq!(config.layout, Some(source_layout));
+    }
+
+    #[test]
+    fn from_without_layout_does_not_fallback_to_local_config() {
+        let (repo, _dir) = test_repo();
+
+        // Source project has no layout
+        run(&repo, NewProjectParams::new("source", "/src/path")).unwrap();
+
+        run(
+            &repo,
+            NewProjectParams {
+                from: Some("source"),
+                local_config: Some(sample_local_config()),
+                ..NewProjectParams::new("target", "/tgt/path")
+            },
+        )
+        .unwrap();
+
+        let config = repo.load("target").unwrap();
+        // --from fully overrides: even though local_config has a layout, source had None
+        assert!(config.layout.is_none());
+    }
+
+    #[test]
+    fn from_layout_overrides_local_config_layout() {
+        let (repo, _dir) = test_repo();
+
+        let captured = Layout::from_snapshot(
+            "captured".to_string(),
+            &[SavedPane {
+                index: 0,
+                path: "/p".to_string(),
+                command: "nvim".to_string(),
+            }],
+        );
+
+        run(
+            &repo,
+            NewProjectParams {
+                from_layout: Some(captured.clone()),
+                local_config: Some(sample_local_config()),
+                ..NewProjectParams::new("my-project", "/some/path")
+            },
+        )
+        .unwrap();
+
+        let config = repo.load("my-project").unwrap();
+        assert_eq!(config.layout, Some(captured));
+    }
+
+    #[test]
+    fn local_config_none_unchanged() {
+        let (repo, _dir) = test_repo();
+
+        run(&repo, NewProjectParams::new("my-project", "/some/path")).unwrap();
+
+        let config = repo.load("my-project").unwrap();
+        assert!(config.project.color.is_none());
+        assert!(config.layout.is_none());
+    }
+
+    #[test]
+    fn local_config_color_and_layout_both_used() {
+        let (repo, _dir) = test_repo();
+        let lc = sample_local_config();
+        let expected_layout = lc.layout.clone();
+
+        run(
+            &repo,
+            NewProjectParams {
+                local_config: Some(lc),
+                ..NewProjectParams::new("my-project", "/some/path")
+            },
+        )
+        .unwrap();
+
+        let config = repo.load("my-project").unwrap();
+        assert_eq!(config.project.color, Some("#aabbcc".to_string()));
+        assert_eq!(config.layout, expected_layout);
     }
 }

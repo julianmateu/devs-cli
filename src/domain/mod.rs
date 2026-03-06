@@ -1,6 +1,7 @@
 pub mod claude_session;
 pub mod duration;
 pub mod layout;
+pub mod local_config;
 pub mod note;
 pub mod project;
 pub mod saved_state;

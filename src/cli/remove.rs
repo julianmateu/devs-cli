@@ -34,7 +34,11 @@ mod tests {
         let dir = tempdir().unwrap();
         let repo = TomlProjectRepository::new(dir.path().to_path_buf());
         let tmux = MockTmuxAdapter::no_session();
-        crate::cli::new::run(&repo, "doomed", "/some/path", None, None, None, &[]).unwrap();
+        crate::cli::new::run(
+            &repo,
+            crate::cli::new::NewProjectParams::new("doomed", "/some/path"),
+        )
+        .unwrap();
 
         assert!(run(&repo, &tmux, "doomed", true, false).is_ok());
         assert!(repo.load("doomed").is_err());
@@ -45,7 +49,11 @@ mod tests {
         let dir = tempdir().unwrap();
         let repo = TomlProjectRepository::new(dir.path().to_path_buf());
         let tmux = MockTmuxAdapter::no_session();
-        crate::cli::new::run(&repo, "safe", "/some/path", None, None, None, &[]).unwrap();
+        crate::cli::new::run(
+            &repo,
+            crate::cli::new::NewProjectParams::new("safe", "/some/path"),
+        )
+        .unwrap();
 
         assert!(run(&repo, &tmux, "safe", false, false).is_err());
         assert!(repo.load("safe").is_ok());
@@ -65,7 +73,11 @@ mod tests {
         let dir = tempdir().unwrap();
         let repo = TomlProjectRepository::new(dir.path().to_path_buf());
         let tmux = MockTmuxAdapter::with_session("", vec![]);
-        crate::cli::new::run(&repo, "proj", "/some/path", None, None, None, &[]).unwrap();
+        crate::cli::new::run(
+            &repo,
+            crate::cli::new::NewProjectParams::new("proj", "/some/path"),
+        )
+        .unwrap();
 
         assert!(run(&repo, &tmux, "proj", true, true).is_ok());
         assert!(tmux.calls().contains(&"kill_session(proj)".to_string()));
@@ -77,7 +89,11 @@ mod tests {
         let dir = tempdir().unwrap();
         let repo = TomlProjectRepository::new(dir.path().to_path_buf());
         let tmux = MockTmuxAdapter::no_session();
-        crate::cli::new::run(&repo, "proj", "/some/path", None, None, None, &[]).unwrap();
+        crate::cli::new::run(
+            &repo,
+            crate::cli::new::NewProjectParams::new("proj", "/some/path"),
+        )
+        .unwrap();
 
         assert!(run(&repo, &tmux, "proj", true, true).is_ok());
         assert!(!tmux.calls().iter().any(|c| c.starts_with("kill_session")));
@@ -89,7 +105,11 @@ mod tests {
         let dir = tempdir().unwrap();
         let repo = TomlProjectRepository::new(dir.path().to_path_buf());
         let tmux = MockTmuxAdapter::with_session("", vec![]);
-        crate::cli::new::run(&repo, "proj", "/some/path", None, None, None, &[]).unwrap();
+        crate::cli::new::run(
+            &repo,
+            crate::cli::new::NewProjectParams::new("proj", "/some/path"),
+        )
+        .unwrap();
 
         assert!(run(&repo, &tmux, "proj", false, true).is_err());
         assert!(tmux.calls().is_empty());
