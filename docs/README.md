@@ -43,9 +43,7 @@ Existing tools (tmuxinator, tmuxp, tmux-resurrect) handle layout save/restore bu
 ## Documentation
 
 - [Design decisions](design.md) — architecture and rationale for key choices
-- [User stories](user-stories.md) — workflows and use cases
 - [CLI commands](cli-commands.md) — full command reference
 - [Data model](data-model.md) — TOML config structure and storage layout
-- [Implementation plan](implementation-plan.md) — phased build plan
 - [Reference: iTerm2 colors](reference/iterm2-colors.md) — escape sequence reference
 - [Reference: tmux layouts](reference/tmux-layouts.md) — layout mechanics reference
