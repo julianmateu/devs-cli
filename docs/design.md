@@ -152,14 +152,13 @@ Instead, Claude sessions and pane layouts are **independent concerns**:
 **Claude session lifecycle**:
 - `devs claude foo "brainstorm architecture"` — launches Claude, records session ID with label
 - `devs claudes foo` — lists active sessions
-- `devs claude-done foo <id>` — marks a session as done (hidden from default list)
+- `devs claude-done foo <label>` — marks a session as done (hidden from default list)
 - `devs claudes foo --all` — shows all sessions including done
 
-On restore, `devs open` prints active Claude session IDs as hints:
+On restore, `devs open` prints active Claude session labels as hints:
 ```
-# Active Claude sessions for rmbs-tool:
-#   devs claude rmbs-tool --resume abc123   "brainstorm architecture"
-#   devs claude rmbs-tool --resume def456   "implement step 4"
+  devs claude rmbs-tool --resume brainstorm architecture
+  devs claude rmbs-tool --resume implement step 4
 ```
 
 The user decides which session to resume in which pane. This is simpler, more reliable, and actually more useful — after a reboot, you might want sessions in different panes.

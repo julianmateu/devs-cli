@@ -175,7 +175,7 @@ devs reset my-api            # discard saved state entirely
 | `devs claudes <name> --all` | Include completed sessions |
 | `devs claude-done <name> <label>` | Mark a Claude session as done |
 
-When you run `devs open`, active Claude session IDs are printed as hints so you know what to resume.
+When you run `devs open`, active Claude sessions are printed as hints so you know what to resume.
 
 ```bash
 devs claude my-api "implement auth middleware"
