@@ -1,6 +1,6 @@
 use anyhow::Result;
 
-use crate::cli::format::expand_home;
+use crate::cli::format::{abbreviate_home, expand_home};
 use crate::domain::local_config::LocalConfig;
 use crate::ports::local_config::LocalConfigWriter;
 use crate::ports::project_repository::ProjectRepository;
@@ -19,7 +19,7 @@ pub fn run(repo: &dyn ProjectRepository, writer: &dyn LocalConfigWriter, name: &
 
     writer.write(&expanded_path, &local_config)?;
 
-    println!("Wrote .devs.toml to {expanded_path}");
+    println!("Wrote .devs.toml to {}", abbreviate_home(&expanded_path));
     Ok(())
 }
 
