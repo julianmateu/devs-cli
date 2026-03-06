@@ -35,4 +35,12 @@ impl TerminalAdapter for ItermTerminalAdapter {
     fn reset_tab_color(&self) -> Result<()> {
         emit_osc("1337;SetColors=tab=default").context("failed to reset tab color")
     }
+
+    fn set_tab_title(&self, title: &str) -> Result<()> {
+        emit_osc(&format!("1;{title}")).context("failed to set tab title")
+    }
+
+    fn reset_tab_title(&self) -> Result<()> {
+        emit_osc("1;").context("failed to reset tab title")
+    }
 }

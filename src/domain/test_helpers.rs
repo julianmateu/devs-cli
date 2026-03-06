@@ -187,4 +187,18 @@ impl TerminalAdapter for MockTerminalAdapter {
             .push("reset_tab_color()".to_string());
         Ok(())
     }
+
+    fn set_tab_title(&self, title: &str) -> Result<()> {
+        self.calls
+            .borrow_mut()
+            .push(format!("set_tab_title({title})"));
+        Ok(())
+    }
+
+    fn reset_tab_title(&self) -> Result<()> {
+        self.calls
+            .borrow_mut()
+            .push("reset_tab_title()".to_string());
+        Ok(())
+    }
 }

@@ -24,6 +24,7 @@ pub fn run(
 
     tmux.kill_session(name)?;
     terminal.reset_tab_color()?;
+    terminal.reset_tab_title()?;
     println!("Closed session '{name}'.");
     Ok(())
 }
@@ -53,6 +54,7 @@ mod tests {
 
         assert!(tmux.calls().contains(&"kill_session(proj)".to_string()));
         assert!(terminal.calls().contains(&"reset_tab_color()".to_string()));
+        assert!(terminal.calls().contains(&"reset_tab_title()".to_string()));
     }
 
     #[test]
@@ -77,6 +79,7 @@ mod tests {
 
         assert!(tmux.calls().contains(&"kill_session(proj)".to_string()));
         assert!(terminal.calls().contains(&"reset_tab_color()".to_string()));
+        assert!(terminal.calls().contains(&"reset_tab_title()".to_string()));
     }
 
     #[test]

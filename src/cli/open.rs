@@ -22,6 +22,7 @@ pub fn run(
     let config = repo.load(name)?;
 
     if tmux.has_session(name) {
+        terminal.set_tab_title(name)?;
         if let Some(color) = &config.project.color {
             terminal.set_tab_color(color)?;
         }
@@ -57,6 +58,7 @@ pub fn run(
         )?;
     }
 
+    terminal.set_tab_title(name)?;
     if let Some(color) = &config.project.color {
         terminal.set_tab_color(color)?;
     }
@@ -208,7 +210,10 @@ mod tests {
 
         run(&repo, &tmux, &terminal, "myproj", false, false).unwrap();
 
-        assert_eq!(terminal.calls(), vec!["set_tab_color(#e06c75)"]);
+        assert_eq!(
+            terminal.calls(),
+            vec!["set_tab_title(myproj)", "set_tab_color(#e06c75)"]
+        );
         assert_eq!(tmux.calls(), vec!["attach(myproj)"]);
     }
 
@@ -257,7 +262,7 @@ mod tests {
             tmux.calls(),
             vec!["create_session(myproj, /some/path)", "attach(myproj)"]
         );
-        assert!(terminal.calls().is_empty());
+        assert_eq!(terminal.calls(), vec!["set_tab_title(myproj)"]);
     }
 
     #[test]
@@ -443,7 +448,10 @@ mod tests {
 
         run(&repo, &tmux, &terminal, "myproj", false, false).unwrap();
 
-        assert_eq!(terminal.calls(), vec!["set_tab_color(#e06c75)"]);
+        assert_eq!(
+            terminal.calls(),
+            vec!["set_tab_title(myproj)", "set_tab_color(#e06c75)"]
+        );
     }
 
     #[test]
