@@ -311,6 +311,31 @@ devs completions fish > ~/.config/fish/completions/devs.fish
 
 Fish loads completions from this directory automatically.
 
+### `devs generate-man <output-dir>`
+
+Generate man pages for `devs` and all subcommands into the given directory. Creates the directory if it doesn't exist.
+
+A one-line hint is printed to stderr after generation. Run `devs generate-man --help` to see full installation instructions.
+
+```bash
+devs generate-man ~/.local/share/man/man1/
+```
+
+Verify installation:
+
+```bash
+man devs
+man devs-open
+```
+
+If `man` doesn't find the pages, ensure the path is in your `MANPATH`:
+
+```bash
+export MANPATH="$HOME/.local/share/man:$MANPATH"
+```
+
+On macOS, the default man search path usually includes `~/.local/share/man`. Check with `man --path`.
+
 ### `devs --version`
 
 Print version.

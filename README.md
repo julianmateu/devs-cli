@@ -204,6 +204,7 @@ devs notes my-api
 | Command | Description |
 |---------|-------------|
 | `devs completions <shell>` | Generate shell completions |
+| `devs generate-man <output-dir>` | Generate man pages |
 | `devs --version` | Print version |
 | `devs --help` | Print help for all commands |
 | `devs <command> --help` | Print help for a specific command |

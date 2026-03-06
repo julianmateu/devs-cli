@@ -10,6 +10,7 @@ pub mod config;
 pub mod edit;
 pub mod format;
 pub mod list;
+pub mod man;
 pub mod new;
 pub mod note;
 pub mod notes;
@@ -178,5 +179,26 @@ SETUP INSTRUCTIONS:
     Completions {
         /// Shell to generate completions for
         shell: Shell,
+    },
+    /// Generate man pages for devs and all subcommands
+    #[command(after_long_help = "\
+INSTALLATION:
+
+  Standard location (recommended):
+    devs generate-man ~/.local/share/man/man1/
+
+  Verify installation:
+    man devs
+    man devs-open
+
+  If 'man' doesn't find the pages, ensure the path is in your MANPATH:
+    export MANPATH=\"$HOME/.local/share/man:$MANPATH\"
+
+  On macOS, the default man search path usually includes ~/.local/share/man.
+  Check with: man --path
+")]
+    GenerateMan {
+        /// Directory to write man page files into
+        output_dir: std::path::PathBuf,
     },
 }
