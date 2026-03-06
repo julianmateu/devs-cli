@@ -103,6 +103,7 @@ fn main() -> Result<()> {
             since,
             clear,
         } => cli::notes::run(&repo, &name, all, since.as_deref(), clear)?,
+        Commands::Completions { shell } => cli::completions::run(shell),
     }
 
     Ok(())

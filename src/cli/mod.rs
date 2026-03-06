@@ -1,9 +1,11 @@
 use clap::{Parser, Subcommand};
+use clap_complete::Shell;
 
 pub mod claude;
 pub mod claude_done;
 pub mod claudes;
 pub mod close;
+pub mod completions;
 pub mod config;
 pub mod edit;
 pub mod format;
@@ -148,5 +150,10 @@ pub enum Commands {
         /// Delete all notes
         #[arg(long)]
         clear: bool,
+    },
+    /// Generate shell completions
+    Completions {
+        /// Shell to generate completions for
+        shell: Shell,
     },
 }
