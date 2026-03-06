@@ -19,6 +19,7 @@ pub mod remove;
 pub mod reset;
 pub mod save;
 pub mod status;
+pub mod tmux_help;
 
 #[derive(Parser)]
 #[command(name = "devs", version, about = "Project-aware tmux session manager")]
@@ -180,6 +181,8 @@ SETUP INSTRUCTIONS:
         /// Shell to generate completions for
         shell: Shell,
     },
+    /// Print tmux quick reference
+    TmuxHelp,
     /// Generate man pages for devs and all subcommands
     #[command(after_long_help = "\
 INSTALLATION:

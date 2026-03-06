@@ -311,6 +311,14 @@ devs completions fish > ~/.config/fish/completions/devs.fish
 
 Fish loads completions from this directory automatically.
 
+### `devs tmux-help`
+
+Print a quick-reference of common tmux keybindings and operations (panes, windows, sessions, copy mode). All keys assume the default prefix `Ctrl-b`.
+
+```bash
+devs tmux-help
+```
+
 ### `devs generate-man <output-dir>`
 
 Generate man pages for `devs` and all subcommands into the given directory. Creates the directory if it doesn't exist.

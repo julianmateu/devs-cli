@@ -104,6 +104,7 @@ fn main() -> Result<()> {
             clear,
         } => cli::notes::run(&repo, &name, all, since.as_deref(), clear)?,
         Commands::Completions { shell } => cli::completions::run(shell),
+        Commands::TmuxHelp => cli::tmux_help::run(),
         Commands::GenerateMan { output_dir } => cli::man::run(&output_dir)?,
     }
 

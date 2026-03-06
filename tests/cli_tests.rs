@@ -97,6 +97,19 @@ fn generate_man_creates_output_directory() {
 }
 
 #[test]
+fn tmux_help_prints_reference() {
+    Command::cargo_bin("devs")
+        .unwrap()
+        .args(["tmux-help"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("Panes"))
+        .stdout(predicate::str::contains("Windows"))
+        .stdout(predicate::str::contains("Sessions"))
+        .stdout(predicate::str::contains("Copy mode"));
+}
+
+#[test]
 fn docs_mention_all_subcommands() {
     let output = Command::cargo_bin("devs")
         .unwrap()

@@ -204,6 +204,7 @@ devs notes my-api
 | Command | Description |
 |---------|-------------|
 | `devs completions <shell>` | Generate shell completions |
+| `devs tmux-help` | Print tmux quick reference |
 | `devs generate-man <output-dir>` | Generate man pages |
 | `devs --version` | Print version |
 | `devs --help` | Print help for all commands |
