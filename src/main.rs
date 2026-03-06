@@ -79,7 +79,7 @@ fn main() -> Result<()> {
             default,
             saved,
         } => cli::open::run(&repo, &tmux, &terminal, &name, default, saved)?,
-        Commands::Save { name } => cli::save::run(&repo, &tmux, &name)?,
+        Commands::Save { name, as_default } => cli::save::run(&repo, &tmux, &name, as_default)?,
         Commands::Reset { name } => cli::reset::run(&repo, &name)?,
         Commands::Claude {
             name,

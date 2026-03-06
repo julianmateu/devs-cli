@@ -94,6 +94,9 @@ pub enum Commands {
     Save {
         /// Project name
         name: String,
+        /// Write the captured layout as the declarative default in [layout]
+        #[arg(long)]
+        as_default: bool,
     },
     /// Reset a project's layout to its declarative default
     Reset {
