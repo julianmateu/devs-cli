@@ -83,8 +83,18 @@ src/
 - **Integration tests**: end-to-end CLI commands against a temp directory (no real tmux). Use `assert_cmd` and `tempfile` crates.
 - **Manual tests**: tmux integration, tab colors, Claude session launching. These can't be easily automated.
 
+## Git hooks
+
+Pre-commit hooks are tracked in `.githooks/` and activated via `git config core.hooksPath .githooks`. The pre-commit hook runs:
+
+1. `cargo fmt --check`
+2. `cargo clippy -- -D warnings`
+3. `cargo test --quiet`
+
+All three must pass before a commit is accepted.
+
 ## Commit conventions
 
 - Commit messages: imperative mood, concise (`Add project CRUD`, `Implement devs open command`)
 - One logical change per commit
-- All tests must pass before committing
+- All tests must pass before committing (enforced by pre-commit hook)

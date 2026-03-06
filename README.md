@@ -43,6 +43,16 @@ cargo install --path .
 
 The binary is named `devs`.
 
+### Development setup
+
+After cloning, configure git to use the tracked hooks:
+
+```bash
+git config core.hooksPath .githooks
+```
+
+This enables the pre-commit hook which runs `cargo fmt --check`, `cargo clippy`, and `cargo test` before each commit.
+
 ## tmux configuration
 
 For tab colors to work inside tmux, you need to enable escape sequence passthrough. Add this to your `~/.tmux.conf`:
