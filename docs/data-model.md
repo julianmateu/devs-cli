@@ -164,7 +164,7 @@ The `main` pane is the initial pane created with the tmux session. Additional pa
 | `label` | string | yes | Human-readable description of the session's purpose |
 | `status` | string | yes | `"active"` or `"done"` |
 | `started_at` | string | yes | ISO 8601 timestamp |
-| `finished_at` | string | yes | ISO 8601 timestamp or `""` if active |
+| `finished_at` | string | no | ISO 8601 timestamp (only present when `status = "done"`) |
 
 ### `[[notes]]`
 
