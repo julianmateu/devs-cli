@@ -169,6 +169,7 @@ mod tests {
                 cmd: Some("claude:main".to_string()),
                 size: Some("40%".to_string()),
             }],
+            layout_string: None,
         });
         repo.save(&source_config).unwrap();
 

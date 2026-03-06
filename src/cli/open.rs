@@ -1,7 +1,7 @@
 use anyhow::{Result, bail};
 
 use crate::domain::claude_session::{ClaudeSession, ClaudeSessionStatus};
-use crate::domain::layout::{Layout, SplitDirection};
+use crate::domain::layout::{Layout, SHELL_COMMANDS, SplitDirection};
 use crate::domain::saved_state::SavedState;
 use crate::ports::project_repository::ProjectRepository;
 use crate::ports::terminal_adapter::TerminalAdapter;
@@ -143,10 +143,12 @@ fn create_from_declarative_layout(
         tmux.select_pane(&format!("{name}:0.0"))?;
     }
 
+    if let Some(ls) = &layout.layout_string {
+        tmux.apply_layout(name, ls)?;
+    }
+
     Ok(())
 }
-
-const SHELL_COMMANDS: &[&str] = &["zsh", "bash", "sh", "fish"];
 
 fn create_from_saved_state(
     tmux: &dyn TmuxAdapter,
@@ -272,6 +274,7 @@ mod tests {
                     size: None,
                 },
             ],
+            layout_string: None,
         });
         repo.save(&config).unwrap();
 
@@ -305,6 +308,7 @@ mod tests {
         config.layout = Some(Layout {
             main: MainPane { cmd: None },
             panes: vec![],
+            layout_string: None,
         });
         config.last_state = Some(SavedState {
             captured_at: dt("2026-03-03T16:00:00Z"),
@@ -339,6 +343,7 @@ mod tests {
                 cmd: Some("nvim".to_string()),
             },
             panes: vec![],
+            layout_string: None,
         });
         config.last_state = Some(SavedState {
             captured_at: dt("2026-03-03T16:00:00Z"),
@@ -495,6 +500,7 @@ mod tests {
                 cmd: Some("claude:code-review".to_string()),
                 size: None,
             }],
+            layout_string: None,
         });
         config.claude_sessions = vec![ClaudeSession {
             id: "sess_1".to_string(),
@@ -544,5 +550,33 @@ mod tests {
 
         // Should not error — active sessions are printed but we don't capture stdout here
         run(&repo, &tmux, &terminal, "myproj", false, false).unwrap();
+    }
+
+    #[test]
+    fn open_applies_layout_string_from_declarative() {
+        let (_dir, repo) = setup_repo();
+        crate::cli::new::run(&repo, "myproj", "/some/path", None, None, &[]).unwrap();
+
+        let mut config = repo.load("myproj").unwrap();
+        config.layout = Some(Layout {
+            main: MainPane {
+                cmd: Some("nvim".to_string()),
+            },
+            panes: vec![SplitPane {
+                split: SplitDirection::Right,
+                cmd: Some("cargo watch".to_string()),
+                size: None,
+            }],
+            layout_string: Some("5aed,176x79,0,0".to_string()),
+        });
+        repo.save(&config).unwrap();
+
+        let tmux = MockTmuxAdapter::no_session();
+        let terminal = MockTerminalAdapter::new();
+
+        run(&repo, &tmux, &terminal, "myproj", false, false).unwrap();
+
+        let calls = tmux.calls();
+        assert!(calls.contains(&"apply_layout(myproj, 5aed,176x79,0,0)".to_string()));
     }
 }

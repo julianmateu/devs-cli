@@ -122,6 +122,7 @@ created_at = "2026-03-03T10:00:00Z"
                     cmd: Some("claude".to_string()),
                     size: None,
                 }],
+                layout_string: None,
             }),
             claude_sessions: vec![ClaudeSession {
                 id: "session_abc".to_string(),

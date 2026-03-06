@@ -28,7 +28,11 @@ pub struct Layout {
     pub main: MainPane,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub panes: Vec<SplitPane>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub layout_string: Option<String>,
 }
+
+pub(crate) const SHELL_COMMANDS: &[&str] = &["zsh", "bash", "sh", "fish"];
 
 #[cfg(test)]
 mod tests {
@@ -40,6 +44,7 @@ mod tests {
         let layout = Layout {
             main: MainPane { cmd: None },
             panes: vec![],
+            layout_string: None,
         };
 
         let expected = "[main]\n";
@@ -58,6 +63,7 @@ mod tests {
                 cmd: Some("claude".to_string()),
                 size: None,
             }],
+            layout_string: None,
         };
 
         let expected = r#"[main]
@@ -89,6 +95,7 @@ cmd = "claude"
                     size: None,
                 },
             ],
+            layout_string: None,
         };
 
         let expected = r#"[main]
@@ -127,6 +134,7 @@ split = "bottom-right"
                     size: None,
                 },
             ],
+            layout_string: None,
         };
 
         let expected = r#"[main]
@@ -139,6 +147,33 @@ split = "bottom"
 
 [[panes]]
 split = "bottom-right"
+"#;
+
+        assert_toml_roundtrip(&layout, expected);
+    }
+
+    #[test]
+    fn layout_with_layout_string_roundtrip() {
+        let layout = Layout {
+            main: MainPane {
+                cmd: Some("nvim".to_string()),
+            },
+            panes: vec![SplitPane {
+                split: SplitDirection::Right,
+                cmd: Some("cargo watch".to_string()),
+                size: None,
+            }],
+            layout_string: Some("5aed,176x79,0,0".to_string()),
+        };
+
+        let expected = r#"layout_string = "5aed,176x79,0,0"
+
+[main]
+cmd = "nvim"
+
+[[panes]]
+split = "right"
+cmd = "cargo watch"
 "#;
 
         assert_toml_roundtrip(&layout, expected);
