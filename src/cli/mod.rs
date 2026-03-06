@@ -184,18 +184,21 @@ SETUP INSTRUCTIONS:
     #[command(after_long_help = "\
 INSTALLATION:
 
-  Standard location (recommended):
+  macOS with Homebrew (recommended):
+    devs generate-man /opt/homebrew/share/man/man1/
+
+  Linux / custom location:
     devs generate-man ~/.local/share/man/man1/
 
   Verify installation:
     man devs
     man devs-open
 
-  If 'man' doesn't find the pages, ensure the path is in your MANPATH:
-    export MANPATH=\"$HOME/.local/share/man:$MANPATH\"
+  If 'man' doesn't find the pages, check your search path:
+    manpath
 
-  On macOS, the default man search path usually includes ~/.local/share/man.
-  Check with: man --path
+  Then ensure the parent of man1/ is listed. If not:
+    export MANPATH=\"/your/chosen/path:$MANPATH\"
 ")]
     GenerateMan {
         /// Directory to write man page files into

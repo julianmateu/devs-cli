@@ -318,6 +318,10 @@ Generate man pages for `devs` and all subcommands into the given directory. Crea
 A one-line hint is printed to stderr after generation. Run `devs generate-man --help` to see full installation instructions.
 
 ```bash
+# macOS with Homebrew
+devs generate-man /opt/homebrew/share/man/man1/
+
+# Linux / custom location
 devs generate-man ~/.local/share/man/man1/
 ```
 
@@ -328,13 +332,11 @@ man devs
 man devs-open
 ```
 
-If `man` doesn't find the pages, ensure the path is in your `MANPATH`:
+If `man` doesn't find the pages, check your search path with `manpath` and ensure the parent of `man1/` is listed. If not:
 
 ```bash
-export MANPATH="$HOME/.local/share/man:$MANPATH"
+export MANPATH="/your/chosen/path:$MANPATH"
 ```
-
-On macOS, the default man search path usually includes `~/.local/share/man`. Check with `man --path`.
 
 ### `devs --version`
 
