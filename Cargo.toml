@@ -3,6 +3,12 @@ name = "devs-cli"
 version = "0.1.0"
 edition = "2024"
 license = "MIT"
+description = "Project-aware tmux session manager with Claude Code session tracking"
+repository = "https://github.com/julianmateu/devs-cli"
+authors = ["Julian Mateu"]
+keywords = ["tmux", "session", "project", "cli", "terminal"]
+categories = ["command-line-utilities", "development-tools"]
+readme = "README.md"
 
 [[bin]]
 name = "devs"

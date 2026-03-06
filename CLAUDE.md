@@ -4,7 +4,7 @@ A project-aware tmux session manager with Claude Code session tracking, written 
 
 ## Project documentation
 
-All design decisions, user stories, data model, CLI commands, and implementation plan are in `docs/`. Read them before making changes.
+Design decisions, data model, and CLI command reference are in `docs/`. Read them before making changes.
 
 ## Development principles
 
@@ -22,27 +22,43 @@ The codebase follows a ports-and-adapters (hexagonal) architecture. Domain logic
 
 ```
 src/
-├── domain/           # Pure business logic and types. No I/O, no dependencies.
-│   ├── project.rs    # Project, ClaudeSession, Note structs + validation
-│   └── layout.rs     # Layout, PaneConfig types + split logic
+├── domain/           # Pure business logic and types. No I/O.
+│   ├── project.rs    # ProjectConfig, ProjectMetadata
+│   ├── layout.rs     # Layout, MainPane, SplitPane, SplitDirection
+│   ├── claude_session.rs  # ClaudeSession, ClaudeSessionStatus
+│   ├── note.rs            # Note
+│   ├── saved_state.rs     # SavedState, SavedPane
+│   ├── local_config.rs    # LocalConfig (.devs.toml model)
+│   ├── duration.rs        # Duration parsing (2d, 1h, 30m)
+│   └── path.rs            # abbreviate_home, expand_home
 │
-├── ports/            # Trait definitions (interfaces). No implementations.
-│   ├── project_repository.rs   # trait ProjectRepository { load, save, list, delete }
-│   ├── tmux_adapter.rs         # trait TmuxAdapter { has_session, create, attach, ... }
-│   └── terminal_adapter.rs     # trait TerminalAdapter { set_tab_color, reset_color }
+├── ports/            # Trait definitions (interfaces).
+│   ├── project_repository.rs   # trait ProjectRepository
+│   ├── tmux_adapter.rs         # trait TmuxAdapter
+│   ├── terminal_adapter.rs     # trait TerminalAdapter
+│   ├── process_launcher.rs     # trait ProcessLauncher
+│   └── local_config.rs         # traits LocalConfigReader, LocalConfigWriter
 │
-├── adapters/         # Infrastructure implementations of the port traits.
-│   ├── toml_project_repository.rs  # Reads/writes TOML files in ~/.config/devs/
-│   ├── shell_tmux_adapter.rs       # Shells out to `tmux` commands
-│   └── iterm_terminal_adapter.rs   # Emits OSC escape sequences
+├── adapters/         # Infrastructure implementations.
+│   ├── toml_project_repository.rs  # Split TOML files (projects/ + local/)
+│   ├── shell_tmux_adapter.rs       # Shell tmux commands
+│   ├── iterm_terminal_adapter.rs   # OSC escape sequences
+│   ├── os_process_launcher.rs      # std::process
+│   ├── toml_local_config.rs        # .devs.toml reader/writer
+│   ├── split_config.rs             # PortableConfig/MachineLocalConfig
+│   ├── config_version.rs           # Config version tracking
+│   └── migration.rs                # v1 → v2 auto-migration
 │
-├── cli/              # Command definitions (clap) and command handlers.
+├── cli/              # Command handlers (receive traits, not concrete types).
 │   ├── mod.rs        # Clap derive structs
-│   ├── new.rs        # Handler for `devs new`
-│   ├── open.rs       # Handler for `devs open`
-│   └── ...
+│   ├── new.rs, init.rs, list.rs, status.rs, config.rs, edit.rs, remove.rs
+│   ├── open.rs, close.rs, save.rs, reset.rs
+│   ├── claude.rs, claudes.rs, claude_done.rs
+│   ├── note.rs, notes.rs
+│   ├── completions.rs, tmux_help.rs, man.rs
+│   └── format.rs     # Re-exports domain::path helpers
 │
-└── main.rs           # Wiring: construct real adapters, pass to handlers
+└── main.rs           # Composition root
 ```
 
 **Key rules:**
