@@ -3,6 +3,7 @@ use clap::{Parser, Subcommand};
 pub mod claude;
 pub mod claude_done;
 pub mod claudes;
+pub mod close;
 pub mod config;
 pub mod edit;
 pub mod format;
@@ -17,7 +18,7 @@ pub mod save;
 pub mod status;
 
 #[derive(Parser)]
-#[command(name = "devs", about = "Project-aware tmux session manager")]
+#[command(name = "devs", version, about = "Project-aware tmux session manager")]
 pub struct Cli {
     #[command(subcommand)]
     pub command: Commands,
@@ -77,6 +78,14 @@ pub enum Commands {
         /// Use the saved layout (error if none)
         #[arg(long)]
         saved: bool,
+    },
+    /// Close a project's tmux session (optionally saving layout first)
+    Close {
+        /// Project name
+        name: String,
+        /// Save the current layout before closing
+        #[arg(long)]
+        save: bool,
     },
     /// Save the current tmux layout for a project
     Save {

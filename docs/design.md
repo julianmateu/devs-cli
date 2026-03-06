@@ -52,15 +52,15 @@
 **Optional**: A future version could support an optional `.devs.toml` in the project root for shareable defaults (layout, color) that are committed to git. The `~/.config/devs/` file always takes precedence.
 
 
-## 3. No explicit `close` command
+## 3. `devs close` for ergonomic save-and-quit
 
-**Decision**: No `devs close` command. tmux manages its own session lifecycle.
+**Decision**: `devs close` provides a convenience command that saves layout (optionally), kills the tmux session, and resets the tab color in one step.
 
 **Rationale**:
-- tmux sessions survive terminal/tab closure and detach. That's tmux's whole point.
-- `devs open` is idempotent: if the tmux session exists, attach to it. If not, create it.
-- Claude session IDs are recorded when they're *launched*, not when they're "closed".
-- The user can kill tmux sessions directly (`tmux kill-session -t name`) — we don't need to wrap that.
+- tmux sessions survive terminal/tab closure and detach. That's tmux's whole point, and direct tmux interaction is never blocked.
+- However, the common workflow of "save layout, kill session, reset tab color" is three separate steps. `devs close` bundles them for convenience.
+- `devs close --save` captures the layout before killing, so state is preserved for next `devs open`.
+- Without `--save`, the session is simply killed and tab color reset.
 
 **Session lifecycle**:
 ```
@@ -68,6 +68,7 @@ devs new      -> register project (metadata + default layout)
 devs open     -> create or attach tmux session
 devs status   -> show projects + which have live tmux sessions
 devs save     -> snapshot current tmux state for later restore
+devs close    -> save (optional) + kill session + reset tab color
 devs note     -> append a timestamped note
 ```
 

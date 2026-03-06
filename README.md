@@ -106,17 +106,23 @@ devs open my-api
 | Command | Description |
 |---------|-------------|
 | `devs new <name> --path <path> [--color <hex>]` | Register a new project |
+| `devs new <name> --from <project>` | Copy layout from an existing project |
 | `devs list` | List all registered projects |
+| `devs status` | Show all projects with live tmux/Claude status |
 | `devs config <name>` | Print a project's TOML config to stdout |
 | `devs edit <name>` | Open the project config in `$EDITOR` |
-| `devs remove <name> --force` | Remove a project from tracking |
+| `devs remove <name> --force [--kill]` | Remove a project (`--kill` to also kill tmux session) |
+
+`devs new` accepts `--session LABEL:ID` (repeatable) to pre-populate Claude sessions, and `--path` expands `~` to `$HOME` automatically.
 
 ```bash
 devs new frontend --path ~/src/frontend --color "#e06c75"
+devs new fork --from frontend --session "main:abc123"
 devs list
+devs status
 devs config frontend
 devs edit frontend
-devs remove frontend --force
+devs remove frontend --force --kill
 ```
 
 ### Session management
@@ -127,13 +133,17 @@ devs remove frontend --force
 | `devs open <name> --default` | Always use the declarative layout |
 | `devs open <name> --saved` | Always use the saved state (error if none) |
 | `devs save <name>` | Snapshot the current tmux layout |
+| `devs close <name> [--save]` | Kill tmux session and reset tab color |
 | `devs reset <name>` | Discard saved state, revert to declarative layout |
 
 `devs open` is idempotent: if the tmux session already exists, it attaches to it. If saved state exists and no flags are given, it restores the saved layout. Use `--default` to force the declarative layout instead.
 
+In layout pane commands, `claude` and `claude:<label>` are expanded automatically -- `claude:brainstorm` starts or resumes a Claude session with label "brainstorm".
+
 ```bash
 devs open my-api
 devs save my-api
+devs close my-api --save     # save layout, kill session, reset tab color
 devs open my-api --default   # ignore saved state, use config layout
 devs reset my-api            # discard saved state entirely
 ```
@@ -174,6 +184,14 @@ devs note my-api "picking up from step 4 of the migration"
 devs note my-api "blocked on API key, asked Sarah"
 devs notes my-api
 ```
+
+### Global
+
+| Command | Description |
+|---------|-------------|
+| `devs --version` | Print version |
+| `devs --help` | Print help for all commands |
+| `devs <command> --help` | Print help for a specific command |
 
 ## Configuration
 

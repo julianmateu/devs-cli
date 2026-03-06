@@ -28,6 +28,7 @@ pub struct MockTmuxAdapter {
     pub has_session: bool,
     pub layout_string: String,
     pub panes: Vec<SavedPane>,
+    pub fail_on_get_layout: bool,
     calls: RefCell<Vec<String>>,
 }
 
@@ -37,6 +38,7 @@ impl MockTmuxAdapter {
             has_session: true,
             layout_string: layout_string.to_string(),
             panes,
+            fail_on_get_layout: false,
             calls: RefCell::new(vec![]),
         }
     }
@@ -46,6 +48,7 @@ impl MockTmuxAdapter {
             has_session: false,
             layout_string: String::new(),
             panes: vec![],
+            fail_on_get_layout: false,
             calls: RefCell::new(vec![]),
         }
     }
@@ -103,6 +106,9 @@ impl TmuxAdapter for MockTmuxAdapter {
     }
 
     fn get_layout(&self, _name: &str) -> Result<String> {
+        if self.fail_on_get_layout {
+            anyhow::bail!("mock: get_layout failed");
+        }
         Ok(self.layout_string.clone())
     }
 

@@ -1,5 +1,6 @@
 use anyhow::{Result, bail};
 
+use super::format::expand_home;
 use crate::domain::claude_session::{ClaudeSession, ClaudeSessionStatus};
 use crate::domain::project::{ProjectConfig, ProjectMetadata};
 use crate::ports::project_repository::ProjectRepository;
@@ -13,12 +14,12 @@ pub fn run(
     sessions: &[String],
 ) -> Result<()> {
     if repo.load(name).is_ok() {
-        bail!("project '{}' already exists", name);
+        bail!("project '{name}' already exists");
     }
 
     let metadata = ProjectMetadata {
         name: String::from(name),
-        path: String::from(path),
+        path: expand_home(path),
         color: color.map(String::from),
         created_at: chrono::Utc::now(),
     };
@@ -315,6 +316,18 @@ mod tests {
         );
         assert!(result.is_err());
         assert!(result.unwrap_err().to_string().contains("LABEL:ID"));
+    }
+
+    #[test]
+    fn new_expands_tilde_in_path() {
+        let (repo, _dir) = test_repo();
+        let home = dirs::home_dir().unwrap();
+
+        run(&repo, "tilded", "~/some/project", None, None, &[]).unwrap();
+
+        let config = repo.load("tilded").unwrap();
+        let expected = format!("{}/some/project", home.display());
+        assert_eq!(config.project.path, expected);
     }
 
     #[test]

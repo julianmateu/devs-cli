@@ -4,11 +4,8 @@ use crate::domain::saved_state::SavedState;
 use crate::ports::project_repository::ProjectRepository;
 use crate::ports::tmux_adapter::TmuxAdapter;
 
-pub fn run(repo: &dyn ProjectRepository, tmux: &dyn TmuxAdapter, name: &str) -> Result<()> {
+pub fn save_layout(repo: &dyn ProjectRepository, tmux: &dyn TmuxAdapter, name: &str) -> Result<()> {
     let mut config = repo.load(name)?;
-    if !tmux.has_session(name) {
-        bail!("no active tmux session for '{name}'")
-    }
     let layout_string = tmux.get_layout(name)?;
     let panes = tmux.get_panes(name)?;
     config.last_state = Some(SavedState {
@@ -17,6 +14,14 @@ pub fn run(repo: &dyn ProjectRepository, tmux: &dyn TmuxAdapter, name: &str) -> 
         panes,
     });
     repo.save(&config)?;
+    Ok(())
+}
+
+pub fn run(repo: &dyn ProjectRepository, tmux: &dyn TmuxAdapter, name: &str) -> Result<()> {
+    if !tmux.has_session(name) {
+        bail!("no active tmux session for '{name}'")
+    }
+    save_layout(repo, tmux, name)?;
     println!("Saved layout for '{name}'.");
     Ok(())
 }

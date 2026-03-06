@@ -143,6 +143,27 @@ Writes to `[last_state]` in the project's TOML file.
 Overwrites any previous saved state.
 
 
+### `devs close <name>`
+
+Close a project's tmux session. Optionally saves the layout before closing.
+
+```bash
+devs close rmbs-tool              # kill session, reset tab color
+devs close rmbs-tool --save       # save layout, then kill session
+```
+
+| Flag | Required | Description |
+|------|----------|-------------|
+| `--save` | no | Save the current layout before closing |
+
+Behavior:
+1. Verify the project exists
+2. Verify the tmux session is alive (error if not)
+3. If `--save`: capture the current layout (same as `devs save`)
+4. Kill the tmux session
+5. Reset the tab color
+
+
 ### `devs reset <name>`
 
 Discard saved tmux state, reverting to the declarative layout.

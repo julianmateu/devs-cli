@@ -50,6 +50,7 @@ fn main() -> Result<()> {
         Commands::Remove { name, force, kill } => {
             cli::remove::run(&repo, &tmux, &name, force, kill)?
         }
+        Commands::Close { name, save } => cli::close::run(&repo, &tmux, &terminal, &name, save)?,
         Commands::Open {
             name,
             default,

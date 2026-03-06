@@ -14,7 +14,7 @@ impl ProcessLauncher for OsProcessLauncher {
             .status()
             .context("failed to launch claude — is it installed?")?;
         if !status.success() {
-            bail!("claude exited with {}", status);
+            bail!("claude exited with {status}");
         }
         Ok(())
     }
