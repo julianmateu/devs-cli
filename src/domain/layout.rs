@@ -286,6 +286,34 @@ cmd = "cargo watch"
     }
 
     #[test]
+    fn from_snapshot_with_full_command_strings() {
+        let panes = vec![
+            SavedPane {
+                index: 0,
+                path: "/project".to_string(),
+                command: "nvim".to_string(),
+            },
+            SavedPane {
+                index: 1,
+                path: "/project".to_string(),
+                command: "npm run dev".to_string(),
+            },
+            SavedPane {
+                index: 2,
+                path: "/project".to_string(),
+                command: "claude:code-review".to_string(),
+            },
+        ];
+
+        let layout = Layout::from_snapshot("layout-str".to_string(), &panes);
+
+        assert_eq!(layout.main.cmd, Some("nvim".to_string()));
+        assert_eq!(layout.panes.len(), 2);
+        assert_eq!(layout.panes[0].cmd, Some("npm run dev".to_string()));
+        assert_eq!(layout.panes[1].cmd, Some("claude:code-review".to_string()));
+    }
+
+    #[test]
     fn from_snapshot_stores_layout_string() {
         let layout = Layout::from_snapshot("5aed,176x79,0,0".to_string(), &[]);
 
