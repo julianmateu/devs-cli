@@ -102,7 +102,7 @@ Deletes the TOML file. Requires `--force` to confirm.
 
 ### `devs edit <name>`
 
-Open the project's TOML config in `$EDITOR`.
+Open the portable config file (`projects/<name>.toml`) in `$EDITOR`. Machine-local data is in `local/<name>.toml`.
 
 ```bash
 devs edit rmbs-tool
@@ -111,7 +111,7 @@ devs edit rmbs-tool
 
 ### `devs config <name>`
 
-Print the project's current config to stdout.
+Print the project's merged config (portable + local combined) to stdout.
 
 ```bash
 devs config rmbs-tool
@@ -208,15 +208,15 @@ devs claude rmbs-tool "brainstorm architecture"
 2. Records it in the project's TOML with the label and status `active`
 3. Launches `claude` in the current terminal
 
-### `devs claude <name> --resume <id>`
+### `devs claude <name> --resume <label>`
 
-Resume an existing Claude Code session.
+Resume an existing Claude Code session by label.
 
 ```bash
-devs claude rmbs-tool --resume abc123
+devs claude rmbs-tool --resume "brainstorm architecture"
 ```
 
-Launches `claude --resume <id>`.
+Looks up the session by label, then launches `claude --resume <internal-id>`.
 
 
 ### `devs claudes <name>`
@@ -236,12 +236,12 @@ def456    implement step 4           active   2026-03-02 14:30
 ```
 
 
-### `devs claude-done <name> <session-id>`
+### `devs claude-done <name> <label>`
 
 Mark a Claude session as done.
 
 ```bash
-devs claude-done rmbs-tool abc123
+devs claude-done rmbs-tool "brainstorm architecture"
 ```
 
 Sets `status = "done"` and `finished_at` to the current timestamp.
