@@ -9,6 +9,7 @@ use anyhow::{Context, Result, bail};
 use clap::Parser;
 
 use adapters::iterm_terminal_adapter::ItermTerminalAdapter;
+use adapters::migration;
 use adapters::os_process_launcher::OsProcessLauncher;
 use adapters::shell_tmux_adapter::ShellTmuxAdapter;
 use adapters::toml_local_config::TomlLocalConfig;
@@ -53,6 +54,7 @@ fn capture_layout_from_session(
 fn main() -> Result<()> {
     let cli = Cli::parse();
     let config_dir = config_dir();
+    migration::migrate_if_needed(&config_dir)?;
     let repo = TomlProjectRepository::new(config_dir.clone());
     let tmux = ShellTmuxAdapter;
     let terminal = ItermTerminalAdapter::new();
@@ -71,6 +73,7 @@ fn main() -> Result<()> {
             let resolved_path = resolve_path(path.as_deref())?;
             let local_config = local_config_adapter.read(&resolved_path)?;
             let captured_layout = capture_layout_from_session(&tmux, from_session.as_deref())?;
+            let storage_path = cli::format::abbreviate_home(&resolved_path);
             cli::new::run(
                 &repo,
                 cli::new::NewProjectParams {
@@ -79,7 +82,7 @@ fn main() -> Result<()> {
                     from_layout: captured_layout,
                     sessions: &sessions,
                     local_config,
-                    ..cli::new::NewProjectParams::new(&name, &resolved_path)
+                    ..cli::new::NewProjectParams::new(&name, &storage_path)
                 },
             )?
         }

@@ -1,11 +1,13 @@
 use anyhow::Result;
 
+use crate::cli::format::expand_home;
 use crate::domain::local_config::LocalConfig;
 use crate::ports::local_config::LocalConfigWriter;
 use crate::ports::project_repository::ProjectRepository;
 
 pub fn run(repo: &dyn ProjectRepository, writer: &dyn LocalConfigWriter, name: &str) -> Result<()> {
     let config = repo.load(name)?;
+    let expanded_path = expand_home(&config.project.path);
 
     let local_config = LocalConfig {
         color: config.project.color,
@@ -15,9 +17,9 @@ pub fn run(repo: &dyn ProjectRepository, writer: &dyn LocalConfigWriter, name: &
         }),
     };
 
-    writer.write(&config.project.path, &local_config)?;
+    writer.write(&expanded_path, &local_config)?;
 
-    println!("Wrote .devs.toml to {}", config.project.path);
+    println!("Wrote .devs.toml to {expanded_path}");
     Ok(())
 }
 

@@ -1,6 +1,7 @@
 use anyhow::{Result, bail};
 use uuid::Uuid;
 
+use crate::cli::format::expand_home;
 use crate::domain::claude_session::{ClaudeSession, ClaudeSessionStatus};
 use crate::ports::process_launcher::ProcessLauncher;
 use crate::ports::project_repository::ProjectRepository;
@@ -22,7 +23,7 @@ pub fn start(
     config.claude_sessions.push(session);
     repo.save(&config)?;
 
-    let path = config.project.path.clone();
+    let path = expand_home(&config.project.path);
     launcher.launch_claude(&[], &path)?;
     Ok(())
 }
@@ -38,7 +39,7 @@ pub fn resume(
 
     match session {
         Some(s) => {
-            let path = config.project.path.clone();
+            let path = expand_home(&config.project.path);
             launcher.launch_claude(&["--resume", &s.id], &path)?;
             Ok(())
         }

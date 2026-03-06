@@ -1,5 +1,6 @@
 use anyhow::{Result, bail};
 
+use crate::cli::format::expand_home;
 use crate::domain::claude_session::{ClaudeSession, ClaudeSessionStatus};
 use crate::domain::layout::{Layout, SHELL_COMMANDS, SplitDirection};
 use crate::domain::saved_state::SavedState;
@@ -20,6 +21,7 @@ pub fn run(
     }
 
     let config = repo.load(name)?;
+    let path = expand_home(&config.project.path);
 
     if tmux.has_session(name) {
         terminal.set_tab_title(name)?;
@@ -42,17 +44,12 @@ pub fn run(
     };
 
     if use_saved_state {
-        create_from_saved_state(
-            tmux,
-            name,
-            &config.project.path,
-            config.last_state.as_ref().unwrap(),
-        )?;
+        create_from_saved_state(tmux, name, &path, config.last_state.as_ref().unwrap())?;
     } else {
         create_from_declarative_layout(
             tmux,
             name,
-            &config.project.path,
+            &path,
             config.layout.as_ref(),
             &config.claude_sessions,
         )?;
