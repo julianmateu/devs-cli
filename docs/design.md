@@ -36,9 +36,13 @@
 
 ```
 ~/.config/devs/
-├── config.toml              # global defaults
-└── projects/
-    ├── rmbs-tool.toml
+├── config.toml              # version = 2
+├── .gitignore               # excludes local/ and backup-v1/
+├── projects/
+│   ├── rmbs-tool.toml       # portable: metadata, layout, notes
+│   └── my-api.toml
+└── local/
+    ├── rmbs-tool.toml       # machine-local: claude sessions, saved state
     └── my-api.toml
 ```
 
@@ -96,19 +100,19 @@ Both are valid. Rather than forcing one model, we support both:
 
 **Declarative layout format** (in the TOML config):
 ```toml
-[[layout.panes]]
+[layout.main]
 cmd = "nvim"
-split = "main"
 
 [[layout.panes]]
 cmd = "claude"
 split = "right"
+size = "40%"
 
 [[layout.panes]]
 split = "bottom-right"
 ```
 
-Split values for v1: `main` (first pane), `right` (vertical split), `bottom` (horizontal split of current pane), `bottom-right` (horizontal split of the rightmost pane). Percentages can be added later (`right:40%`).
+Split values: `right` (vertical split), `bottom` (horizontal split of current pane), `bottom-right` (horizontal split of the rightmost pane). Size is an optional percentage (e.g. `"40%"`).
 
 **Runtime snapshot format** (captured by `devs save`):
 ```toml

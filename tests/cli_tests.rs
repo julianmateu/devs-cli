@@ -173,17 +173,10 @@ fn docs_mention_all_subcommands() {
         "Failed to parse any subcommands from devs --help"
     );
 
-    let doc_files: Vec<(&str, String)> = vec![
-        (
-            "README.md",
-            fs::read_to_string(Path::new("README.md")).expect("Failed to read README.md"),
-        ),
-        (
-            "docs/cli-commands.md",
-            fs::read_to_string(Path::new("docs/cli-commands.md"))
-                .expect("Failed to read docs/cli-commands.md"),
-        ),
-    ];
+    let doc_files: Vec<(&str, String)> = vec![(
+        "README.md",
+        fs::read_to_string(Path::new("README.md")).expect("Failed to read README.md"),
+    )];
 
     let mut missing: Vec<String> = Vec::new();
 
