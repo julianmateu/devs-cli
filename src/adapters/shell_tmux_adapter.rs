@@ -7,6 +7,78 @@ use crate::ports::tmux_adapter::TmuxAdapter;
 
 pub struct ShellTmuxAdapter;
 
+fn normalize_command(raw_args: &str) -> String {
+    if raw_args.is_empty() {
+        return String::new();
+    }
+
+    let (first, rest) = raw_args.split_once(' ').unwrap_or((raw_args, ""));
+
+    // Detect node wrappers: node /path/to/npm-cli.js, npx-cli.js, yarn-*.cjs
+    if first == "node" || first.ends_with("/node") {
+        if let Some(script) = rest.split_whitespace().next() {
+            let filename = script.rsplit('/').next().unwrap_or(script);
+            let trailing = rest.split_once(' ').map(|(_, t)| t).unwrap_or("");
+            if filename.starts_with("npm-cli") {
+                return format!("npm {trailing}").trim().to_string();
+            }
+            if filename.starts_with("npx-cli") {
+                return format!("npx {trailing}").trim().to_string();
+            }
+            if filename.starts_with("yarn-") && filename.ends_with(".cjs") {
+                return format!("yarn {trailing}").trim().to_string();
+            }
+        }
+        // Plain node script — return as-is
+        return raw_args.to_string();
+    }
+
+    // Strip absolute path from first arg
+    if first.contains('/') {
+        let basename = first.rsplit('/').next().unwrap_or(first);
+        if rest.is_empty() {
+            return basename.to_string();
+        }
+        return format!("{basename} {rest}");
+    }
+
+    raw_args.to_string()
+}
+
+fn resolve_pane_command(shell_pid: u32, fallback_command: &str) -> String {
+    let pgrep = Command::new("pgrep")
+        .args(["-P", &shell_pid.to_string()])
+        .output();
+
+    let child_pids: Vec<String> = match pgrep {
+        Ok(output) if output.status.success() => String::from_utf8_lossy(&output.stdout)
+            .split_whitespace()
+            .map(String::from)
+            .collect(),
+        _ => return fallback_command.to_string(),
+    };
+
+    if child_pids.is_empty() {
+        return fallback_command.to_string();
+    }
+
+    let ps = Command::new("ps")
+        .args(["-o", "args=", "-p", &child_pids[0]])
+        .output();
+
+    match ps {
+        Ok(output) if output.status.success() => {
+            let raw = String::from_utf8_lossy(&output.stdout).trim().to_string();
+            if raw.is_empty() {
+                fallback_command.to_string()
+            } else {
+                normalize_command(&raw)
+            }
+        }
+        _ => fallback_command.to_string(),
+    }
+}
+
 impl ShellTmuxAdapter {
     fn run_tmux(&self, args: &[&str]) -> Result<()> {
         let status = Command::new("tmux")
@@ -92,20 +164,31 @@ impl TmuxAdapter for ShellTmuxAdapter {
             "-t",
             name,
             "-F",
-            "#{pane_index}\t#{pane_current_path}\t#{pane_current_command}",
+            "#{pane_index}\t#{pane_current_path}\t#{pane_current_command}\t#{pane_pid}",
         ])?;
         let panes = output
             .lines()
             .filter_map(|line| {
                 let parts: Vec<&str> = line.split('\t').collect();
-                if parts.len() == 3 {
-                    Some(SavedPane {
+                match parts.len() {
+                    4 => {
+                        let index = parts[0].parse().ok()?;
+                        let path = parts[1].to_string();
+                        let fallback = parts[2];
+                        let pid: u32 = parts[3].parse().ok()?;
+                        let command = resolve_pane_command(pid, fallback);
+                        Some(SavedPane {
+                            index,
+                            path,
+                            command,
+                        })
+                    }
+                    3 => Some(SavedPane {
                         index: parts[0].parse().ok()?,
                         path: parts[1].to_string(),
                         command: parts[2].to_string(),
-                    })
-                } else {
-                    None
+                    }),
+                    _ => None,
                 }
             })
             .collect();
@@ -118,5 +201,57 @@ impl TmuxAdapter for ShellTmuxAdapter {
 
     fn kill_session(&self, name: &str) -> Result<()> {
         self.run_tmux(&["kill-session", "-t", name])
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn normalize_npm() {
+        assert_eq!(
+            normalize_command("node /usr/local/lib/node_modules/npm/bin/npm-cli.js run dev"),
+            "npm run dev"
+        );
+    }
+
+    #[test]
+    fn normalize_npx() {
+        assert_eq!(
+            normalize_command("node /usr/local/lib/node_modules/npm/bin/npx-cli.js some-tool"),
+            "npx some-tool"
+        );
+    }
+
+    #[test]
+    fn normalize_yarn() {
+        assert_eq!(
+            normalize_command("node /home/user/.yarn/releases/yarn-4.0.cjs dev"),
+            "yarn dev"
+        );
+    }
+
+    #[test]
+    fn normalize_plain_node_script() {
+        assert_eq!(normalize_command("node server.js"), "node server.js");
+    }
+
+    #[test]
+    fn normalize_non_node_passthrough() {
+        assert_eq!(
+            normalize_command("cargo watch -x test"),
+            "cargo watch -x test"
+        );
+    }
+
+    #[test]
+    fn normalize_absolute_path() {
+        assert_eq!(normalize_command("/usr/local/bin/nvim"), "nvim");
+    }
+
+    #[test]
+    fn normalize_empty() {
+        assert_eq!(normalize_command(""), "");
     }
 }
