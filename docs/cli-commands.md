@@ -16,14 +16,17 @@ devs new my-api --path ~/src/my-api
 | `--path <path>` | yes | Absolute path to the project directory |
 | `--color <hex>` | no | Tab color (`"#rrggbb"` or `"rrggbb"`) |
 | `--from <project>` | no | Copy layout from an existing project |
+| `--from-session <name>` | no | Capture layout from a live tmux session (conflicts with `--from`) |
 | `--session <LABEL:ID>` | no | Pre-populate a Claude session (repeatable) |
 
 ```bash
 devs new fork --path ~/src/fork --from rmbs-tool --session "implement:abc123"
+devs new captured --path ~/src/captured --from-session my-api
 ```
 
 Creates `~/.config/devs/projects/<name>.toml` with default layout.
 When `--from` is specified, copies the layout from the source project (not notes or saved state).
+When `--from-session` is specified, captures the exact pane geometry and commands from a live tmux session.
 When `--session` is specified, creates active Claude sessions with the given label and ID.
 Fails if a project with that name already exists.
 
@@ -131,16 +134,17 @@ This allows declarative layouts to include Claude sessions that persist across `
 Snapshot the current tmux state for a project.
 
 ```bash
-devs save rmbs-tool
+devs save rmbs-tool              # save to [last_state] (runtime snapshot)
+devs save rmbs-tool --as-default # save as the declarative [layout] default
 ```
 
-Captures:
-- tmux layout string (`list-windows -F '#{window_layout}'`)
-- Each pane's working directory and command (`list-panes -F`)
-- Timestamp
+| Flag | Required | Description |
+|------|----------|-------------|
+| `--as-default` | no | Write captured layout as the declarative `[layout]` default |
 
-Writes to `[last_state]` in the project's TOML file.
-Overwrites any previous saved state.
+Without `--as-default`: captures to `[last_state]` in the project's TOML file (runtime snapshot, overwrites any previous saved state).
+
+With `--as-default`: captures the current pane geometry and commands and writes them as the declarative `[layout]` section. This replaces any existing layout. The `layout_string` field preserves exact pane geometry, while pane commands remain human-editable.
 
 
 ### `devs close <name>`
@@ -260,6 +264,16 @@ Notes are displayed newest-first.
 
 
 ## Global
+
+### `devs completions <shell>`
+
+Generate shell completions for the given shell (bash, zsh, fish, elvish, powershell).
+
+```bash
+devs completions bash > ~/.local/share/bash-completion/completions/devs
+devs completions zsh > ~/.zfunc/_devs
+devs completions fish > ~/.config/fish/completions/devs.fish
+```
 
 ### `devs --version`
 

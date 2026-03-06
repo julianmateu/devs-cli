@@ -117,6 +117,7 @@ devs open my-api
 |---------|-------------|
 | `devs new <name> --path <path> [--color <hex>]` | Register a new project |
 | `devs new <name> --from <project>` | Copy layout from an existing project |
+| `devs new <name> --from-session <session>` | Capture layout from a live tmux session |
 | `devs list` | List all registered projects |
 | `devs status` | Show all projects with live tmux/Claude status |
 | `devs config <name>` | Print a project's TOML config to stdout |
@@ -128,6 +129,7 @@ devs open my-api
 ```bash
 devs new frontend --path ~/src/frontend --color "#e06c75"
 devs new fork --from frontend --session "main:abc123"
+devs new captured --path ~/src/captured --from-session frontend
 devs list
 devs status
 devs config frontend
@@ -143,6 +145,7 @@ devs remove frontend --force --kill
 | `devs open <name> --default` | Always use the declarative layout |
 | `devs open <name> --saved` | Always use the saved state (error if none) |
 | `devs save <name>` | Snapshot the current tmux layout |
+| `devs save <name> --as-default` | Save current layout as the declarative default |
 | `devs close <name> [--save]` | Kill tmux session and reset tab color |
 | `devs reset <name>` | Discard saved state, revert to declarative layout |
 
@@ -153,7 +156,8 @@ In layout pane commands, `claude` and `claude:<label>` are expanded automaticall
 ```bash
 devs open my-api
 devs save my-api
-devs close my-api --save     # save layout, kill session, reset tab color
+devs save my-api --as-default   # capture current layout as the declarative default
+devs close my-api --save        # save layout, kill session, reset tab color
 devs open my-api --default   # ignore saved state, use config layout
 devs reset my-api            # discard saved state entirely
 ```
@@ -199,9 +203,25 @@ devs notes my-api
 
 | Command | Description |
 |---------|-------------|
+| `devs completions <shell>` | Generate shell completions |
 | `devs --version` | Print version |
 | `devs --help` | Print help for all commands |
 | `devs <command> --help` | Print help for a specific command |
+
+### Shell completions
+
+Generate completions for your shell and source them:
+
+```bash
+# Bash
+devs completions bash > ~/.local/share/bash-completion/completions/devs
+
+# Zsh (add ~/.zfunc to fpath in .zshrc first)
+devs completions zsh > ~/.zfunc/_devs
+
+# Fish
+devs completions fish > ~/.config/fish/completions/devs.fish
+```
 
 ## Configuration
 

@@ -39,11 +39,14 @@ color = "#e06c75"
 created_at = "2026-03-03T10:00:00Z"
 
 # Declarative layout (baseline)
-# The first pane with split = "main" is the initial pane created with the session.
-# Subsequent panes split relative to the current active pane.
-[[layout.panes]]
+# The main pane is the initial pane created with the session.
+# Additional panes split relative to the previous active pane.
+# Optional layout_string preserves exact tmux geometry (written by `devs save --as-default`).
+[layout]
+# layout_string = "5aed,176x79,0,0[...]"   # optional, overrides geometry from splits
+
+[layout.main]
 cmd = "nvim"
-split = "main"
 
 [[layout.panes]]
 cmd = "claude"
@@ -118,24 +121,37 @@ command = "zsh"
 | `color` | string | no | Hex color for iTerm2 tab (`"#rrggbb"` or `"rrggbb"`) |
 | `created_at` | string | yes | ISO 8601 timestamp |
 
+### `[layout]`
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `layout_string` | string | no | tmux layout string for exact geometry (written by `devs save --as-default`) |
+
+When `layout_string` is present, pane geometry comes from `tmux select-layout` instead of split directions. Pane commands are still read from `[layout.main]` and `[[layout.panes]]`.
+
+### `[layout.main]`
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `cmd` | string | no | Command to run in the main pane (default: shell) |
+
 ### `[[layout.panes]]`
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `cmd` | string | no | Command to run in the pane (default: shell) |
 | `split` | string | yes | Split direction (see below) |
-| `size` | string | no | Size as percentage (`"40%"`) — future |
+| `size` | string | no | Size as percentage (`"40%"`) |
 
 **Split values**:
 
 | Value | Meaning | tmux equivalent |
 |-------|---------|-----------------|
-| `main` | The initial pane (first in the list) | `new-session` creates this |
 | `right` | Vertical split to the right of the current pane | `split-window -h` |
 | `bottom` | Horizontal split below the current pane | `split-window -v` |
 | `bottom-right` | Horizontal split below the rightmost pane | `select-pane -t {right}` then `split-window -v` |
 
-The `main` pane must be the first entry. Subsequent panes are created in order, each splitting relative to the pane that was active after the previous split.
+The `main` pane is the initial pane created with the tmux session. Additional panes are created in order, each splitting relative to the pane that was active after the previous split.
 
 ### `[[claude_sessions]]`
 
@@ -196,13 +212,20 @@ struct Project {
 
 #[derive(Debug, Serialize, Deserialize)]
 struct Layout {
-    panes: Vec<PaneConfig>,
+    main: MainPane,
+    panes: Vec<SplitPane>,
+    layout_string: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-struct PaneConfig {
+struct MainPane {
     cmd: Option<String>,
-    split: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct SplitPane {
+    split: SplitDirection,   // "right", "bottom", "bottom-right"
+    cmd: Option<String>,
     size: Option<String>,
 }
 
