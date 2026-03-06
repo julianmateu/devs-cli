@@ -23,7 +23,7 @@ It is additive, not a cage. Direct tmux interaction is never blocked. `devs` add
 - **iTerm2 tab colors** -- each project gets a color, set automatically via escape sequences
 - **Claude Code session tracking** -- record which Claude sessions belong to which project, with labels and active/done status
 - **Fleeting notes** -- timestamped scratchpad per project for context breadcrumbs
-- **Simple storage** -- one TOML file per project in `~/.config/devs/projects/`, human-readable and hand-editable
+- **Simple storage** -- TOML files in `~/.config/devs/`, split into portable config (syncable across machines) and machine-local data
 
 ## Installation
 
@@ -36,7 +36,7 @@ It is additive, not a cage. Direct tmux interaction is never blocked. `devs` add
 ### Build from source
 
 ```bash
-git clone https://github.com/your-user/devs-cli.git
+git clone https://github.com/julianmateu/devs-cli.git
 cd devs-cli
 cargo install --path .
 ```
@@ -78,7 +78,7 @@ The config file opens in `$EDITOR`. Add a layout:
 ```toml
 [project]
 name = "my-api"
-path = "/Users/you/src/my-api"
+path = "~/src/my-api"
 color = "#61afef"
 created_at = "2026-03-05T10:00:00Z"
 
@@ -121,8 +121,8 @@ devs open my-api
 | `devs init <name>` | Export project config to a shareable `.devs.toml` |
 | `devs list` | List all registered projects |
 | `devs status` | Show all projects with live tmux/Claude status |
-| `devs config <name>` | Print a project's TOML config to stdout |
-| `devs edit <name>` | Open the project config in `$EDITOR` |
+| `devs config <name>` | Print merged config (portable + local) to stdout |
+| `devs edit <name>` | Open the portable config in `$EDITOR` |
 | `devs remove <name> --force [--kill]` | Remove a project (`--kill` to also kill tmux session) |
 
 `devs new` accepts `--session LABEL:ID` (repeatable) to pre-populate Claude sessions. `--path` defaults to the current directory and expands `~` to `$HOME`. If a `.devs.toml` file exists in the project directory, its color and layout are picked up automatically (explicit flags override).
@@ -170,18 +170,18 @@ devs reset my-api            # discard saved state entirely
 | Command | Description |
 |---------|-------------|
 | `devs claude <name> <label>` | Launch a new Claude session with a label |
-| `devs claude <name> --resume <id>` | Resume an existing Claude session |
+| `devs claude <name> --resume <label>` | Resume an existing Claude session |
 | `devs claudes <name>` | List active Claude sessions for a project |
 | `devs claudes <name> --all` | Include completed sessions |
-| `devs claude-done <name> <id>` | Mark a Claude session as done |
+| `devs claude-done <name> <label>` | Mark a Claude session as done |
 
 When you run `devs open`, active Claude session IDs are printed as hints so you know what to resume.
 
 ```bash
 devs claude my-api "implement auth middleware"
 devs claudes my-api
-devs claude my-api --resume abc123
-devs claude-done my-api abc123
+devs claude my-api --resume "implement auth middleware"
+devs claude-done my-api "implement auth middleware"
 ```
 
 ### Notes
@@ -289,18 +289,19 @@ This writes the project's color and layout to `.devs.toml` in the project's dire
 
 ## Configuration
 
-Projects are stored as individual TOML files in `~/.config/devs/projects/`. Here is a full example:
+Config is split into **portable** (syncable) and **machine-local** files under `~/.config/devs/`.
+
+### Portable config (`projects/<name>.toml`)
+
+Metadata, layout, and notes. Paths under `$HOME` use tilde form (`~/...`).
 
 ```toml
 [project]
 name = "my-api"
-path = "/Users/you/src/my-api"
+path = "~/src/my-api"
 color = "#61afef"
 created_at = "2026-03-05T10:00:00Z"
 
-# Declarative layout (baseline)
-# The main pane is the initial pane created with the session.
-# Additional panes split relative to the active pane.
 [layout.main]
 cmd = "nvim"
 
@@ -312,7 +313,16 @@ size = "40%"
 [[layout.panes]]
 split = "bottom-right"
 
-# Claude Code sessions
+[[notes]]
+content = "picking up from step 4 of the migration"
+created_at = "2026-03-03T10:15:00Z"
+```
+
+### Machine-local config (`local/<name>.toml`)
+
+Claude sessions and saved tmux state. Not synced.
+
+```toml
 [[claude_sessions]]
 id = "session_abc123"
 label = "implement auth middleware"
@@ -326,12 +336,6 @@ started_at = "2026-02-28T09:00:00Z"
 status = "done"
 finished_at = "2026-02-28T17:00:00Z"
 
-# Notes
-[[notes]]
-content = "picking up from step 4 of the migration"
-created_at = "2026-03-03T10:15:00Z"
-
-# Saved tmux state (written by `devs save`, not hand-edited)
 [last_state]
 captured_at = "2026-03-03T16:00:00Z"
 layout_string = "5aed,176x79,0,0[176x59,0,0,0,176x19,0,60{87x19,0,60,1,88x19,88,60,2}]"
@@ -351,6 +355,17 @@ index = 2
 path = "/Users/you/src/my-api"
 command = "zsh"
 ```
+
+### Multi-machine sync
+
+The portable config directory can be synced via git. Machine-local data is auto-gitignored.
+
+```bash
+cd ~/.config/devs
+git init && git add -A && git remote add origin <your-repo> && git push
+```
+
+See [docs/data-model.md](docs/data-model.md) for full details.
 
 ### Layout split directions
 
