@@ -29,7 +29,13 @@ fn normalize_command(raw_args: &str) -> String {
                 return format!("yarn {trailing}").trim().to_string();
             }
         }
-        // Plain node script — return as-is
+        // Plain node script — normalize the node path itself
+        if first.contains('/') {
+            if rest.is_empty() {
+                return "node".to_string();
+            }
+            return format!("node {rest}");
+        }
         return raw_args.to_string();
     }
 
@@ -45,38 +51,52 @@ fn normalize_command(raw_args: &str) -> String {
     raw_args.to_string()
 }
 
+/// Pure logic: given optional pgrep output and a function to get ps args for a pid,
+/// determine the best command string for a pane.
+fn resolve_from_children(
+    child_pids: Option<&str>,
+    ps_args_for_pid: impl Fn(&str) -> Option<String>,
+    fallback: &str,
+) -> String {
+    let pids: Vec<&str> = child_pids.unwrap_or("").split_whitespace().collect();
+
+    if pids.is_empty() {
+        return fallback.to_string();
+    }
+
+    match ps_args_for_pid(pids[0]) {
+        Some(raw) if !raw.is_empty() => normalize_command(&raw),
+        _ => fallback.to_string(),
+    }
+}
+
 fn resolve_pane_command(shell_pid: u32, fallback_command: &str) -> String {
     let pgrep = Command::new("pgrep")
         .args(["-P", &shell_pid.to_string()])
         .output();
 
-    let child_pids: Vec<String> = match pgrep {
-        Ok(output) if output.status.success() => String::from_utf8_lossy(&output.stdout)
-            .split_whitespace()
-            .map(String::from)
-            .collect(),
-        _ => return fallback_command.to_string(),
+    let pgrep_output = match pgrep {
+        Ok(output) if output.status.success() => {
+            Some(String::from_utf8_lossy(&output.stdout).trim().to_string())
+        }
+        _ => None,
     };
 
-    if child_pids.is_empty() {
-        return fallback_command.to_string();
-    }
-
-    let ps = Command::new("ps")
-        .args(["-o", "args=", "-p", &child_pids[0]])
-        .output();
-
-    match ps {
-        Ok(output) if output.status.success() => {
-            let raw = String::from_utf8_lossy(&output.stdout).trim().to_string();
-            if raw.is_empty() {
-                fallback_command.to_string()
+    resolve_from_children(
+        pgrep_output.as_deref(),
+        |pid| {
+            let ps = Command::new("ps")
+                .args(["-o", "args=", "-p", pid])
+                .output()
+                .ok()?;
+            if ps.status.success() {
+                Some(String::from_utf8_lossy(&ps.stdout).trim().to_string())
             } else {
-                normalize_command(&raw)
+                None
             }
-        }
-        _ => fallback_command.to_string(),
-    }
+        },
+        fallback_command,
+    )
 }
 
 impl ShellTmuxAdapter {
@@ -238,6 +258,15 @@ mod tests {
     }
 
     #[test]
+    fn normalize_absolute_node_binary() {
+        assert_eq!(
+            normalize_command("/usr/local/bin/node server.js"),
+            "node server.js"
+        );
+        assert_eq!(normalize_command("/usr/local/bin/node"), "node");
+    }
+
+    #[test]
     fn normalize_non_node_passthrough() {
         assert_eq!(
             normalize_command("cargo watch -x test"),
@@ -253,5 +282,52 @@ mod tests {
     #[test]
     fn normalize_empty() {
         assert_eq!(normalize_command(""), "");
+    }
+
+    #[test]
+    fn resolve_no_children_returns_fallback() {
+        assert_eq!(resolve_from_children(None, |_| None, "zsh"), "zsh");
+        assert_eq!(resolve_from_children(Some(""), |_| None, "zsh"), "zsh");
+    }
+
+    #[test]
+    fn resolve_one_child_returns_normalized() {
+        let result = resolve_from_children(
+            Some("12345"),
+            |pid| {
+                assert_eq!(pid, "12345");
+                Some("node /usr/lib/npm/bin/npm-cli.js run dev".to_string())
+            },
+            "zsh",
+        );
+        assert_eq!(result, "npm run dev");
+    }
+
+    #[test]
+    fn resolve_multiple_children_uses_first() {
+        let result = resolve_from_children(
+            Some("111\n222\n333"),
+            |pid| {
+                if pid == "111" {
+                    Some("cargo watch -x test".to_string())
+                } else {
+                    panic!("should only query first pid");
+                }
+            },
+            "zsh",
+        );
+        assert_eq!(result, "cargo watch -x test");
+    }
+
+    #[test]
+    fn resolve_ps_failure_returns_fallback() {
+        let result = resolve_from_children(Some("12345"), |_| None, "bash");
+        assert_eq!(result, "bash");
+    }
+
+    #[test]
+    fn resolve_ps_empty_output_returns_fallback() {
+        let result = resolve_from_children(Some("12345"), |_| Some(String::new()), "bash");
+        assert_eq!(result, "bash");
     }
 }
