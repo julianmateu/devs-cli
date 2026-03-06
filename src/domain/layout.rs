@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 
+use crate::domain::saved_state::SavedPane;
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum SplitDirection {
@@ -33,6 +35,38 @@ pub struct Layout {
 }
 
 pub(crate) const SHELL_COMMANDS: &[&str] = &["zsh", "bash", "sh", "fish"];
+
+impl Layout {
+    pub fn from_snapshot(layout_string: String, panes: &[SavedPane]) -> Self {
+        let main_cmd = panes
+            .first()
+            .filter(|p| !SHELL_COMMANDS.contains(&p.command.as_str()))
+            .map(|p| p.command.clone());
+
+        let split_panes: Vec<SplitPane> = panes
+            .iter()
+            .skip(1)
+            .map(|p| {
+                let cmd = if SHELL_COMMANDS.contains(&p.command.as_str()) {
+                    None
+                } else {
+                    Some(p.command.clone())
+                };
+                SplitPane {
+                    split: SplitDirection::Right,
+                    cmd,
+                    size: None,
+                }
+            })
+            .collect();
+
+        Layout {
+            main: MainPane { cmd: main_cmd },
+            panes: split_panes,
+            layout_string: Some(layout_string),
+        }
+    }
+}
 
 #[cfg(test)]
 mod tests {
@@ -177,5 +211,84 @@ cmd = "cargo watch"
 "#;
 
         assert_toml_roundtrip(&layout, expected);
+    }
+
+    #[test]
+    fn from_snapshot_extracts_commands() {
+        let panes = vec![
+            SavedPane {
+                index: 0,
+                path: "/some/path".to_string(),
+                command: "nvim".to_string(),
+            },
+            SavedPane {
+                index: 1,
+                path: "/some/path".to_string(),
+                command: "zsh".to_string(),
+            },
+            SavedPane {
+                index: 2,
+                path: "/some/path".to_string(),
+                command: "cargo watch".to_string(),
+            },
+        ];
+
+        let layout = Layout::from_snapshot("5aed,176x79".to_string(), &panes);
+
+        assert_eq!(layout.main.cmd, Some("nvim".to_string()));
+        assert_eq!(layout.panes.len(), 2);
+        assert_eq!(layout.panes[0].cmd, None); // zsh is a shell
+        assert_eq!(layout.panes[1].cmd, Some("cargo watch".to_string()));
+    }
+
+    #[test]
+    fn from_snapshot_skips_all_shell_commands() {
+        let panes = vec![
+            SavedPane {
+                index: 0,
+                path: "/p".to_string(),
+                command: "bash".to_string(),
+            },
+            SavedPane {
+                index: 1,
+                path: "/p".to_string(),
+                command: "fish".to_string(),
+            },
+        ];
+
+        let layout = Layout::from_snapshot("layout".to_string(), &panes);
+
+        assert_eq!(layout.main.cmd, None);
+        assert_eq!(layout.panes.len(), 1);
+        assert_eq!(layout.panes[0].cmd, None);
+    }
+
+    #[test]
+    fn from_snapshot_single_pane() {
+        let panes = vec![SavedPane {
+            index: 0,
+            path: "/p".to_string(),
+            command: "nvim".to_string(),
+        }];
+
+        let layout = Layout::from_snapshot("layout".to_string(), &panes);
+
+        assert_eq!(layout.main.cmd, Some("nvim".to_string()));
+        assert!(layout.panes.is_empty());
+    }
+
+    #[test]
+    fn from_snapshot_empty_panes() {
+        let layout = Layout::from_snapshot("layout".to_string(), &[]);
+
+        assert_eq!(layout.main.cmd, None);
+        assert!(layout.panes.is_empty());
+    }
+
+    #[test]
+    fn from_snapshot_stores_layout_string() {
+        let layout = Layout::from_snapshot("5aed,176x79,0,0".to_string(), &[]);
+
+        assert_eq!(layout.layout_string, Some("5aed,176x79,0,0".to_string()));
     }
 }

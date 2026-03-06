@@ -5,7 +5,7 @@ mod ports;
 
 use std::path::PathBuf;
 
-use anyhow::Result;
+use anyhow::{Result, bail};
 use clap::Parser;
 
 use adapters::iterm_terminal_adapter::ItermTerminalAdapter;
@@ -13,11 +13,29 @@ use adapters::os_process_launcher::OsProcessLauncher;
 use adapters::shell_tmux_adapter::ShellTmuxAdapter;
 use adapters::toml_project_repository::TomlProjectRepository;
 use cli::{Cli, Commands};
+use domain::layout::Layout;
+use ports::tmux_adapter::TmuxAdapter;
 
 fn config_dir() -> PathBuf {
     dirs::home_dir()
         .expect("could not determine home directory")
         .join(".config/devs")
+}
+
+fn capture_layout_from_session(
+    tmux: &dyn TmuxAdapter,
+    from_session: Option<&str>,
+) -> Result<Option<Layout>> {
+    let session = match from_session {
+        Some(s) => s,
+        None => return Ok(None),
+    };
+    if !tmux.has_session(session) {
+        bail!("no active tmux session for '{session}'");
+    }
+    let layout_string = tmux.get_layout(session)?;
+    let panes = tmux.get_panes(session)?;
+    Ok(Some(Layout::from_snapshot(layout_string, &panes)))
 }
 
 fn main() -> Result<()> {
@@ -34,15 +52,20 @@ fn main() -> Result<()> {
             path,
             color,
             from,
+            from_session,
             sessions,
-        } => cli::new::run(
-            &repo,
-            &name,
-            &path,
-            color.as_deref(),
-            from.as_deref(),
-            &sessions,
-        )?,
+        } => {
+            let captured_layout = capture_layout_from_session(&tmux, from_session.as_deref())?;
+            cli::new::run(
+                &repo,
+                &name,
+                &path,
+                color.as_deref(),
+                from.as_deref(),
+                captured_layout,
+                &sessions,
+            )?
+        }
         Commands::List => cli::list::run(&repo)?,
         Commands::Status => cli::status::run(&repo, &tmux)?,
         Commands::Config { name } => cli::config::run(&repo, &name)?,

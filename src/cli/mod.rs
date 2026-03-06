@@ -39,6 +39,9 @@ pub enum Commands {
         /// Copy layout from an existing project
         #[arg(long)]
         from: Option<String>,
+        /// Capture layout from a live tmux session
+        #[arg(long, conflicts_with = "from")]
+        from_session: Option<String>,
         /// Pre-populate a Claude session (format: LABEL:ID, repeatable)
         #[arg(long = "session", value_name = "LABEL:ID")]
         sessions: Vec<String>,

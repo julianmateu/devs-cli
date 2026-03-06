@@ -26,7 +26,7 @@ mod tests {
     fn reset_clears_saved_state() {
         let dir = tempdir().unwrap();
         let repo = TomlProjectRepository::new(dir.path().to_path_buf());
-        crate::cli::new::run(&repo, "test-project", "/some/path", None, None, &[]).unwrap();
+        crate::cli::new::run(&repo, "test-project", "/some/path", None, None, None, &[]).unwrap();
 
         // Add saved state
         let mut config = repo.load("test-project").unwrap();
@@ -48,7 +48,7 @@ mod tests {
     fn reset_no_saved_state_is_ok() {
         let dir = tempdir().unwrap();
         let repo = TomlProjectRepository::new(dir.path().to_path_buf());
-        crate::cli::new::run(&repo, "test-project", "/some/path", None, None, &[]).unwrap();
+        crate::cli::new::run(&repo, "test-project", "/some/path", None, None, None, &[]).unwrap();
 
         assert!(run(&repo, "test-project").is_ok());
     }

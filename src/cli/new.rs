@@ -2,6 +2,7 @@ use anyhow::{Result, bail};
 
 use super::format::expand_home;
 use crate::domain::claude_session::{ClaudeSession, ClaudeSessionStatus};
+use crate::domain::layout::Layout;
 use crate::domain::project::{ProjectConfig, ProjectMetadata};
 use crate::ports::project_repository::ProjectRepository;
 
@@ -11,6 +12,7 @@ pub fn run(
     path: &str,
     color: Option<&str>,
     from: Option<&str>,
+    from_layout: Option<Layout>,
     sessions: &[String],
 ) -> Result<()> {
     if repo.load(name).is_ok() {
@@ -25,7 +27,9 @@ pub fn run(
     };
     metadata.validate()?;
 
-    let layout = if let Some(source_name) = from {
+    let layout = if from_layout.is_some() {
+        from_layout
+    } else if let Some(source_name) = from {
         let source = repo.load(source_name)?;
         source.layout
     } else {
@@ -91,7 +95,7 @@ mod tests {
     fn new_creates_project() {
         let (repo, _dir) = test_repo();
 
-        run(&repo, "my-project", "/some/path", None, None, &[]).unwrap();
+        run(&repo, "my-project", "/some/path", None, None, None, &[]).unwrap();
 
         let config = repo.load("my-project").unwrap();
         assert_eq!(config.project.name, "my-project");
@@ -112,6 +116,7 @@ mod tests {
             "/some/path",
             Some("#e06c75"),
             None,
+            None,
             &[],
         )
         .unwrap();
@@ -124,8 +129,8 @@ mod tests {
     fn new_rejects_duplicate_name() {
         let (repo, _dir) = test_repo();
 
-        run(&repo, "my-project", "/some/path", None, None, &[]).unwrap();
-        let result = run(&repo, "my-project", "/other/path", None, None, &[]);
+        run(&repo, "my-project", "/some/path", None, None, None, &[]).unwrap();
+        let result = run(&repo, "my-project", "/other/path", None, None, None, &[]);
 
         assert!(result.is_err());
     }
@@ -134,7 +139,7 @@ mod tests {
     fn new_rejects_invalid_name() {
         let (repo, _dir) = test_repo();
 
-        let result = run(&repo, "bad.name", "/some/path", None, None, &[]);
+        let result = run(&repo, "bad.name", "/some/path", None, None, None, &[]);
         assert!(result.is_err());
     }
 
@@ -148,6 +153,7 @@ mod tests {
             "/some/path",
             Some("not-hex"),
             None,
+            None,
             &[],
         );
         assert!(result.is_err());
@@ -158,7 +164,7 @@ mod tests {
         let (repo, _dir) = test_repo();
 
         // Create source with a layout
-        run(&repo, "source", "/src/path", None, None, &[]).unwrap();
+        run(&repo, "source", "/src/path", None, None, None, &[]).unwrap();
         let mut source_config = repo.load("source").unwrap();
         source_config.layout = Some(Layout {
             main: MainPane {
@@ -174,7 +180,16 @@ mod tests {
         repo.save(&source_config).unwrap();
 
         // Create new project from source
-        run(&repo, "target", "/tgt/path", None, Some("source"), &[]).unwrap();
+        run(
+            &repo,
+            "target",
+            "/tgt/path",
+            None,
+            Some("source"),
+            None,
+            &[],
+        )
+        .unwrap();
 
         let target = repo.load("target").unwrap();
         assert_eq!(target.layout, source_config.layout);
@@ -184,7 +199,7 @@ mod tests {
     fn from_does_not_copy_notes_or_last_state() {
         let (repo, _dir) = test_repo();
 
-        run(&repo, "source", "/src/path", None, None, &[]).unwrap();
+        run(&repo, "source", "/src/path", None, None, None, &[]).unwrap();
         let mut source_config = repo.load("source").unwrap();
         source_config.notes = vec![Note {
             content: "some note".to_string(),
@@ -201,7 +216,16 @@ mod tests {
         });
         repo.save(&source_config).unwrap();
 
-        run(&repo, "target", "/tgt/path", None, Some("source"), &[]).unwrap();
+        run(
+            &repo,
+            "target",
+            "/tgt/path",
+            None,
+            Some("source"),
+            None,
+            &[],
+        )
+        .unwrap();
 
         let target = repo.load("target").unwrap();
         assert!(target.notes.is_empty());
@@ -212,7 +236,16 @@ mod tests {
     fn from_uses_new_name_path_color() {
         let (repo, _dir) = test_repo();
 
-        run(&repo, "source", "/src/path", Some("#111111"), None, &[]).unwrap();
+        run(
+            &repo,
+            "source",
+            "/src/path",
+            Some("#111111"),
+            None,
+            None,
+            &[],
+        )
+        .unwrap();
 
         run(
             &repo,
@@ -220,6 +253,7 @@ mod tests {
             "/tgt/path",
             Some("#222222"),
             Some("source"),
+            None,
             &[],
         )
         .unwrap();
@@ -234,7 +268,7 @@ mod tests {
     fn from_with_session_creates_session() {
         let (repo, _dir) = test_repo();
 
-        run(&repo, "source", "/src/path", None, None, &[]).unwrap();
+        run(&repo, "source", "/src/path", None, None, None, &[]).unwrap();
 
         let sessions = vec!["main:abc123".to_string()];
         run(
@@ -243,6 +277,7 @@ mod tests {
             "/tgt/path",
             None,
             Some("source"),
+            None,
             &sessions,
         )
         .unwrap();
@@ -261,7 +296,7 @@ mod tests {
     fn from_with_multiple_sessions() {
         let (repo, _dir) = test_repo();
 
-        run(&repo, "source", "/src/path", None, None, &[]).unwrap();
+        run(&repo, "source", "/src/path", None, None, None, &[]).unwrap();
 
         let sessions = vec!["main:abc123".to_string(), "review:def456".to_string()];
         run(
@@ -270,6 +305,7 @@ mod tests {
             "/tgt/path",
             None,
             Some("source"),
+            None,
             &sessions,
         )
         .unwrap();
@@ -284,9 +320,18 @@ mod tests {
     fn from_with_no_sessions_creates_none() {
         let (repo, _dir) = test_repo();
 
-        run(&repo, "source", "/src/path", None, None, &[]).unwrap();
+        run(&repo, "source", "/src/path", None, None, None, &[]).unwrap();
 
-        run(&repo, "target", "/tgt/path", None, Some("source"), &[]).unwrap();
+        run(
+            &repo,
+            "target",
+            "/tgt/path",
+            None,
+            Some("source"),
+            None,
+            &[],
+        )
+        .unwrap();
 
         let target = repo.load("target").unwrap();
         assert!(target.claude_sessions.is_empty());
@@ -296,7 +341,15 @@ mod tests {
     fn from_fails_if_source_missing() {
         let (repo, _dir) = test_repo();
 
-        let result = run(&repo, "target", "/tgt/path", None, Some("nonexistent"), &[]);
+        let result = run(
+            &repo,
+            "target",
+            "/tgt/path",
+            None,
+            Some("nonexistent"),
+            None,
+            &[],
+        );
         assert!(result.is_err());
     }
 
@@ -304,7 +357,7 @@ mod tests {
     fn from_with_invalid_session_format_fails() {
         let (repo, _dir) = test_repo();
 
-        run(&repo, "source", "/src/path", None, None, &[]).unwrap();
+        run(&repo, "source", "/src/path", None, None, None, &[]).unwrap();
 
         let sessions = vec!["no-colon-here".to_string()];
         let result = run(
@@ -313,6 +366,7 @@ mod tests {
             "/tgt/path",
             None,
             Some("source"),
+            None,
             &sessions,
         );
         assert!(result.is_err());
@@ -324,7 +378,7 @@ mod tests {
         let (repo, _dir) = test_repo();
         let home = dirs::home_dir().unwrap();
 
-        run(&repo, "tilded", "~/some/project", None, None, &[]).unwrap();
+        run(&repo, "tilded", "~/some/project", None, None, None, &[]).unwrap();
 
         let config = repo.load("tilded").unwrap();
         let expected = format!("{}/some/project", home.display());
@@ -335,11 +389,108 @@ mod tests {
     fn from_works_when_source_has_no_layout() {
         let (repo, _dir) = test_repo();
 
-        run(&repo, "source", "/src/path", None, None, &[]).unwrap();
+        run(&repo, "source", "/src/path", None, None, None, &[]).unwrap();
 
-        run(&repo, "target", "/tgt/path", None, Some("source"), &[]).unwrap();
+        run(
+            &repo,
+            "target",
+            "/tgt/path",
+            None,
+            Some("source"),
+            None,
+            &[],
+        )
+        .unwrap();
 
         let target = repo.load("target").unwrap();
         assert!(target.layout.is_none());
+    }
+
+    #[test]
+    fn new_from_layout_captures_layout() {
+        let (repo, _dir) = test_repo();
+
+        let captured = Layout::from_snapshot(
+            "5aed,176x79,0,0".to_string(),
+            &[
+                SavedPane {
+                    index: 0,
+                    path: "/p".to_string(),
+                    command: "nvim".to_string(),
+                },
+                SavedPane {
+                    index: 1,
+                    path: "/p".to_string(),
+                    command: "zsh".to_string(),
+                },
+                SavedPane {
+                    index: 2,
+                    path: "/p".to_string(),
+                    command: "cargo watch".to_string(),
+                },
+            ],
+        );
+
+        run(
+            &repo,
+            "my-project",
+            "/some/path",
+            None,
+            None,
+            Some(captured),
+            &[],
+        )
+        .unwrap();
+
+        let config = repo.load("my-project").unwrap();
+        let layout = config.layout.expect("layout should be set");
+        assert_eq!(layout.layout_string, Some("5aed,176x79,0,0".to_string()));
+        assert_eq!(layout.main.cmd, Some("nvim".to_string()));
+        assert_eq!(layout.panes.len(), 2);
+        assert_eq!(layout.panes[0].cmd, None); // zsh is a shell
+        assert_eq!(layout.panes[1].cmd, Some("cargo watch".to_string()));
+    }
+
+    #[test]
+    fn new_from_layout_takes_priority_over_from() {
+        let (repo, _dir) = test_repo();
+
+        // Create a source project with a different layout
+        run(&repo, "source", "/src/path", None, None, None, &[]).unwrap();
+        let mut source_config = repo.load("source").unwrap();
+        source_config.layout = Some(Layout {
+            main: MainPane {
+                cmd: Some("emacs".to_string()),
+            },
+            panes: vec![],
+            layout_string: None,
+        });
+        repo.save(&source_config).unwrap();
+
+        // Create with both from and from_layout — from_layout wins
+        let captured = Layout::from_snapshot(
+            "captured-layout".to_string(),
+            &[SavedPane {
+                index: 0,
+                path: "/p".to_string(),
+                command: "nvim".to_string(),
+            }],
+        );
+
+        run(
+            &repo,
+            "target",
+            "/tgt/path",
+            None,
+            Some("source"),
+            Some(captured),
+            &[],
+        )
+        .unwrap();
+
+        let config = repo.load("target").unwrap();
+        let layout = config.layout.expect("layout should be set");
+        assert_eq!(layout.layout_string, Some("captured-layout".to_string()));
+        assert_eq!(layout.main.cmd, Some("nvim".to_string()));
     }
 }

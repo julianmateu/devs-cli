@@ -47,7 +47,7 @@ mod tests {
     fn list_succeeds_with_projects() {
         let dir = tempdir().unwrap();
         let repo = TomlProjectRepository::new(dir.path().to_path_buf());
-        crate::cli::new::run(&repo, "test-project", "/some/path", None, None, &[]).unwrap();
+        crate::cli::new::run(&repo, "test-project", "/some/path", None, None, None, &[]).unwrap();
 
         assert!(run(&repo).is_ok());
     }
@@ -56,8 +56,8 @@ mod tests {
     fn list_shows_paths() {
         let dir = tempdir().unwrap();
         let repo = TomlProjectRepository::new(dir.path().to_path_buf());
-        crate::cli::new::run(&repo, "alpha", "/usr/local/alpha", None, None, &[]).unwrap();
-        crate::cli::new::run(&repo, "beta", "/usr/local/beta", None, None, &[]).unwrap();
+        crate::cli::new::run(&repo, "alpha", "/usr/local/alpha", None, None, None, &[]).unwrap();
+        crate::cli::new::run(&repo, "beta", "/usr/local/beta", None, None, None, &[]).unwrap();
 
         // Just verify it runs without error (output is visual)
         assert!(run(&repo).is_ok());
