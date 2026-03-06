@@ -1,6 +1,7 @@
 use assert_cmd::Command;
 use predicates::prelude::*;
 use std::fs;
+use std::path::Path;
 
 #[test]
 fn version_flag_prints_version() {
@@ -93,4 +94,65 @@ fn generate_man_creates_output_directory() {
         .success();
 
     assert!(nested.join("devs.1").exists());
+}
+
+#[test]
+fn docs_mention_all_subcommands() {
+    let output = Command::cargo_bin("devs")
+        .unwrap()
+        .arg("--help")
+        .output()
+        .expect("failed to run devs --help");
+
+    let help_text = String::from_utf8(output.stdout).unwrap();
+
+    // Parse subcommand names from help output: lines like "  open   Description..."
+    let subcommands: Vec<&str> = help_text
+        .lines()
+        .filter_map(|line| {
+            let trimmed = line.trim_start();
+            // Subcommand lines are indented and start with a word
+            if line.starts_with("  ") && !line.starts_with("    ") && !trimmed.is_empty() {
+                trimmed.split_whitespace().next()
+            } else {
+                None
+            }
+        })
+        // Skip clap built-ins and flags
+        .filter(|name| *name != "help" && !name.starts_with('-'))
+        .collect();
+
+    assert!(
+        !subcommands.is_empty(),
+        "Failed to parse any subcommands from devs --help"
+    );
+
+    let doc_files: Vec<(&str, String)> = vec![
+        (
+            "README.md",
+            fs::read_to_string(Path::new("README.md")).expect("Failed to read README.md"),
+        ),
+        (
+            "docs/cli-commands.md",
+            fs::read_to_string(Path::new("docs/cli-commands.md"))
+                .expect("Failed to read docs/cli-commands.md"),
+        ),
+    ];
+
+    let mut missing: Vec<String> = Vec::new();
+
+    for cmd in &subcommands {
+        let pattern = format!("devs {cmd}");
+        for (filename, content) in &doc_files {
+            if !content.contains(&pattern) {
+                missing.push(format!("`{pattern}` not found in {filename}"));
+            }
+        }
+    }
+
+    assert!(
+        missing.is_empty(),
+        "Documentation is out of sync with CLI subcommands:\n  - {}",
+        missing.join("\n  - ")
+    );
 }
