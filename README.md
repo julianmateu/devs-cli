@@ -210,18 +210,47 @@ devs notes my-api
 
 ### Shell completions
 
-Generate completions for your shell and source them:
+Generate and install completions for your shell. Run `devs completions --help` to see these instructions at any time.
+
+#### Oh My Zsh
 
 ```bash
-# Bash
-devs completions bash > ~/.local/share/bash-completion/completions/devs
+mkdir -p ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/devs
+devs completions zsh > ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/devs/_devs
+```
 
-# Zsh (add ~/.zfunc to fpath in .zshrc first)
+Then add `devs` to the `plugins=(...)` list in your `~/.zshrc` and restart your shell.
+
+#### Vanilla zsh
+
+```bash
+mkdir -p ~/.zfunc
 devs completions zsh > ~/.zfunc/_devs
+```
 
-# Fish
+Add to your `~/.zshrc` (before `compinit`):
+
+```zsh
+fpath=(~/.zfunc $fpath)
+autoload -Uz compinit && compinit
+```
+
+#### Bash
+
+```bash
+mkdir -p ~/.local/share/bash-completion/completions
+devs completions bash > ~/.local/share/bash-completion/completions/devs
+```
+
+Completions are loaded automatically on the next shell start.
+
+#### Fish
+
+```bash
 devs completions fish > ~/.config/fish/completions/devs.fish
 ```
+
+Fish loads completions from this directory automatically — no further setup needed.
 
 ## Configuration
 

@@ -269,11 +269,47 @@ Notes are displayed newest-first.
 
 Generate shell completions for the given shell (bash, zsh, fish, elvish, powershell).
 
+A one-line hint is printed to stderr after generation, so piping to a file works cleanly (`devs completions zsh > _devs`). Run `devs completions --help` to see full setup instructions.
+
+#### Oh My Zsh
+
 ```bash
-devs completions bash > ~/.local/share/bash-completion/completions/devs
+mkdir -p ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/devs
+devs completions zsh > ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/devs/_devs
+```
+
+Add `devs` to the `plugins=(...)` list in `~/.zshrc`, then restart your shell.
+
+#### Vanilla zsh
+
+```bash
+mkdir -p ~/.zfunc
 devs completions zsh > ~/.zfunc/_devs
+```
+
+Add to `~/.zshrc` (before `compinit`):
+
+```zsh
+fpath=(~/.zfunc $fpath)
+autoload -Uz compinit && compinit
+```
+
+#### Bash
+
+```bash
+mkdir -p ~/.local/share/bash-completion/completions
+devs completions bash > ~/.local/share/bash-completion/completions/devs
+```
+
+Completions are loaded automatically on the next shell start.
+
+#### Fish
+
+```bash
 devs completions fish > ~/.config/fish/completions/devs.fish
 ```
+
+Fish loads completions from this directory automatically.
 
 ### `devs --version`
 

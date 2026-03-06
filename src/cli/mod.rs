@@ -152,6 +152,29 @@ pub enum Commands {
         clear: bool,
     },
     /// Generate shell completions
+    #[command(after_long_help = "\
+SETUP INSTRUCTIONS:
+
+  Oh My Zsh:
+    mkdir -p ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/devs
+    devs completions zsh > ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/devs/_devs
+    # Add 'devs' to plugins=(...) in ~/.zshrc, then restart your shell
+
+  Vanilla zsh:
+    mkdir -p ~/.zfunc
+    devs completions zsh > ~/.zfunc/_devs
+    # Add to ~/.zshrc (before compinit):
+    #   fpath=(~/.zfunc $fpath)
+    #   autoload -Uz compinit && compinit
+
+  Bash:
+    mkdir -p ~/.local/share/bash-completion/completions
+    devs completions bash > ~/.local/share/bash-completion/completions/devs
+
+  Fish:
+    devs completions fish > ~/.config/fish/completions/devs.fish
+    # Fish loads completions from this directory automatically
+")]
     Completions {
         /// Shell to generate completions for
         shell: Shell,

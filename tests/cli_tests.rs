@@ -37,7 +37,8 @@ fn completions_generates_output() {
         .args(["completions", "zsh"])
         .assert()
         .success()
-        .stdout(predicate::str::contains("devs"));
+        .stdout(predicate::str::contains("devs"))
+        .stderr(predicate::str::contains("setup instructions"));
 }
 
 #[test]
@@ -47,5 +48,6 @@ fn completions_generates_bash_output() {
         .args(["completions", "bash"])
         .assert()
         .success()
-        .stdout(predicate::str::contains("devs"));
+        .stdout(predicate::str::contains("devs"))
+        .stderr(predicate::str::contains("setup instructions"));
 }
