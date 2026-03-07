@@ -61,10 +61,15 @@ pub fn run(repo: &dyn ProjectRepository, tmux: &dyn TmuxAdapter) -> Result<()> {
         return Ok(());
     }
 
-    let w_name = rows.iter().map(|r| r.name.len()).max().unwrap().max(7);
-    let w_path = rows.iter().map(|r| r.path.len()).max().unwrap().max(4);
+    let w_name = rows.iter().map(|r| r.name.len()).max().unwrap_or(0).max(7);
+    let w_path = rows.iter().map(|r| r.path.len()).max().unwrap_or(0).max(4);
     let w_tmux = 5; // "alive" / "dead"
-    let w_claude = rows.iter().map(|r| r.claude.len()).max().unwrap().max(6);
+    let w_claude = rows
+        .iter()
+        .map(|r| r.claude.len())
+        .max()
+        .unwrap_or(0)
+        .max(6);
 
     println!(
         "{:<w_name$}   {:<w_path$}   {:<w_tmux$}   {:<w_claude$}   LAST NOTE",

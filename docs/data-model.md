@@ -9,10 +9,10 @@ Config is split into **portable** (syncable) and **machine-local** files:
 ├── config.toml              # version = 2
 ├── .gitignore               # excludes local/ and backup-v1/
 ├── projects/
-│   ├── rmbs-tool.toml       # portable: metadata, layout, notes
+│   ├── my-project.toml       # portable: metadata, layout, notes
 │   └── my-api.toml
 └── local/
-    ├── rmbs-tool.toml       # machine-specific: claude sessions, saved tmux state
+    ├── my-project.toml       # machine-specific: claude sessions, saved tmux state
     └── my-api.toml
 ```
 
@@ -34,8 +34,8 @@ Contains metadata, layout, and notes.
 
 ```toml
 [project]
-name = "rmbs-tool"
-path = "~/src/rmbs-tool"
+name = "my-project"
+path = "~/src/my-project"
 color = "#e06c75"
 created_at = "2026-03-03T10:00:00Z"
 

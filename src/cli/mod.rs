@@ -65,7 +65,7 @@ pub enum Commands {
         /// Project name
         name: String,
     },
-    /// Open a project's config in $EDITOR
+    /// Open a project's config in $VISUAL or $EDITOR
     Edit {
         /// Project name
         name: String,

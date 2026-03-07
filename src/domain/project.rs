@@ -108,7 +108,7 @@ created_at = "2026-03-03T10:00:00Z"
     fn full_project_config_roundtrip() {
         let config = ProjectConfig {
             project: ProjectMetadata {
-                name: "rmbs-tool".to_string(),
+                name: "my-project".to_string(),
                 path: "/home/user/src/my-project".to_string(),
                 color: Some("#e06c75".to_string()),
                 created_at: dt("2026-03-03T10:00:00Z"),
@@ -149,7 +149,7 @@ created_at = "2026-03-03T10:00:00Z"
         // The exact output order depends on serde field order + toml rules.
         // This test will reveal the actual format.
         let expected = r##"[project]
-name = "rmbs-tool"
+name = "my-project"
 path = "/home/user/src/my-project"
 color = "#e06c75"
 created_at = "2026-03-03T10:00:00Z"

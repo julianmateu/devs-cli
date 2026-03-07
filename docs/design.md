@@ -39,10 +39,10 @@
 ├── config.toml              # version = 2
 ├── .gitignore               # excludes local/ and backup-v1/
 ├── projects/
-│   ├── rmbs-tool.toml       # portable: metadata, layout, notes
+│   ├── my-project.toml       # portable: metadata, layout, notes
 │   └── my-api.toml
 └── local/
-    ├── rmbs-tool.toml       # machine-local: claude sessions, saved state
+    ├── my-project.toml       # machine-local: claude sessions, saved state
     └── my-api.toml
 ```
 
@@ -161,8 +161,8 @@ Instead, Claude sessions and pane layouts are **independent concerns**:
 
 On restore, `devs open` prints active Claude session labels as hints:
 ```
-  devs claude rmbs-tool --resume brainstorm architecture
-  devs claude rmbs-tool --resume implement step 4
+  devs claude my-project --resume brainstorm architecture
+  devs claude my-project --resume implement step 4
 ```
 
 The user decides which session to resume in which pane. This is simpler, more reliable, and actually more useful — after a reboot, you might want sessions in different panes.
