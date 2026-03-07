@@ -57,7 +57,7 @@ pub fn run(repo: &dyn ProjectRepository, tmux: &dyn TmuxAdapter) -> Result<()> {
         .collect();
 
     if rows.is_empty() {
-        println!("No projects registered.");
+        println!("No projects could be loaded.");
         return Ok(());
     }
 

@@ -44,7 +44,15 @@ pub fn run(
     };
 
     if use_saved_state {
-        create_from_saved_state(tmux, name, &path, config.last_state.as_ref().unwrap())?;
+        create_from_saved_state(
+            tmux,
+            name,
+            &path,
+            config
+                .last_state
+                .as_ref()
+                .expect("last_state verified present above"),
+        )?;
     } else {
         create_from_declarative_layout(
             tmux,

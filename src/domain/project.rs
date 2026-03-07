@@ -109,7 +109,7 @@ created_at = "2026-03-03T10:00:00Z"
         let config = ProjectConfig {
             project: ProjectMetadata {
                 name: "rmbs-tool".to_string(),
-                path: "/Users/julian/src/rmbs-tool".to_string(),
+                path: "/home/user/src/my-project".to_string(),
                 color: Some("#e06c75".to_string()),
                 created_at: dt("2026-03-03T10:00:00Z"),
             },
@@ -139,7 +139,7 @@ created_at = "2026-03-03T10:00:00Z"
                 layout_string: "5aed,176x79,0,0".to_string(),
                 panes: vec![SavedPane {
                     index: 0,
-                    path: "/Users/julian/src/rmbs-tool".to_string(),
+                    path: "/home/user/src/my-project".to_string(),
                     command: "nvim".to_string(),
                 }],
             }),
@@ -150,7 +150,7 @@ created_at = "2026-03-03T10:00:00Z"
         // This test will reveal the actual format.
         let expected = r##"[project]
 name = "rmbs-tool"
-path = "/Users/julian/src/rmbs-tool"
+path = "/home/user/src/my-project"
 color = "#e06c75"
 created_at = "2026-03-03T10:00:00Z"
 
@@ -177,7 +177,7 @@ layout_string = "5aed,176x79,0,0"
 
 [[last_state.panes]]
 index = 0
-path = "/Users/julian/src/rmbs-tool"
+path = "/home/user/src/my-project"
 command = "nvim"
 "##;
 

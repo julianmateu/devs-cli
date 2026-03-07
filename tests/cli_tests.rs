@@ -5,12 +5,13 @@ use std::path::Path;
 
 #[test]
 fn version_flag_prints_version() {
+    let version = env!("CARGO_PKG_VERSION");
     Command::cargo_bin("devs")
         .unwrap()
         .arg("--version")
         .assert()
         .success()
-        .stdout(predicate::str::contains("0.1.0"));
+        .stdout(predicate::str::contains(version));
 }
 
 #[test]

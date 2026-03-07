@@ -103,7 +103,7 @@ mod tests {
                 layout_string: "5aed,176x79,0,0".to_string(),
                 panes: vec![SavedPane {
                     index: 0,
-                    path: "/Users/julian/src/test".to_string(),
+                    path: "/home/user/src/test-proj".to_string(),
                     command: "nvim".to_string(),
                 }],
             }),
@@ -172,7 +172,7 @@ created_at = "2026-03-03T10:15:00Z"
                 layout_string: "5aed,176x79,0,0".to_string(),
                 panes: vec![SavedPane {
                     index: 0,
-                    path: "/Users/julian/src/test".to_string(),
+                    path: "/home/user/src/test-proj".to_string(),
                     command: "nvim".to_string(),
                 }],
             }),
@@ -190,7 +190,7 @@ layout_string = "5aed,176x79,0,0"
 
 [[last_state.panes]]
 index = 0
-path = "/Users/julian/src/test"
+path = "/home/user/src/test-proj"
 command = "nvim"
 "#;
 

@@ -73,7 +73,7 @@ fn migrate_v1_to_v2(config_dir: &Path) -> Result<()> {
         if !local.is_empty() {
             let local_path = config_dir.join("local").join(format!("{name}.toml"));
             if !local_path.exists() {
-                fs::create_dir_all(local_path.parent().unwrap())?;
+                fs::create_dir_all(local_path.parent().expect("config path has parent"))?;
                 let local_content =
                     toml::to_string(&local).context("failed to serialize local config")?;
                 fs::write(&local_path, &local_content)

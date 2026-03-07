@@ -94,17 +94,17 @@ layout_string = "5aed,176x79,0,0[176x59,0,0,0,176x19,0,60{87x19,0,60,1,88x19,88,
 
 [[last_state.panes]]
 index = 0
-path = "/Users/julian/src/rmbs-tool"
+path = "/home/user/src/my-project"
 command = "nvim"
 
 [[last_state.panes]]
 index = 1
-path = "/Users/julian/src/rmbs-tool"
+path = "/home/user/src/my-project"
 command = "claude"
 
 [[last_state.panes]]
 index = 2
-path = "/Users/julian/src/rmbs-tool"
+path = "/home/user/src/my-project"
 command = "zsh"
 ```
 

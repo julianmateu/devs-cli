@@ -8,7 +8,11 @@ pub fn run(name: &str, config_dir: &Path) -> Result<()> {
     if !path.exists() {
         bail!("project '{name}' not found");
     }
-    let editor = std::env::var("EDITOR").unwrap_or_else(|_| "vim".to_string());
+    let editor = std::env::var("VISUAL")
+        .or_else(|_| std::env::var("EDITOR"))
+        .map_err(|_| {
+            anyhow::anyhow!("no $EDITOR set; set EDITOR or VISUAL to your preferred text editor")
+        })?;
     Command::new(&editor)
         .arg(&path)
         .status()

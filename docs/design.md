@@ -122,17 +122,17 @@ captured_at = "2026-03-03T14:30:00Z"
 
 [[last_state.panes]]
 index = 0
-path = "/Users/julian/src/rmbs-tool"
+path = "/home/user/src/my-project"
 command = "nvim"
 
 [[last_state.panes]]
 index = 1
-path = "/Users/julian/src/rmbs-tool"
+path = "/home/user/src/my-project"
 command = "claude"
 
 [[last_state.panes]]
 index = 2
-path = "/Users/julian/src/rmbs-tool"
+path = "/home/user/src/my-project"
 command = "zsh"
 ```
 

@@ -36,7 +36,7 @@ impl ProjectRepository for TomlProjectRepository {
         // serde defaults for missing fields)
         if !local.is_empty() {
             let local_path = self.local_path(&config.project.name);
-            fs::create_dir_all(local_path.parent().unwrap())?;
+            fs::create_dir_all(local_path.parent().expect("config path has parent"))?;
             let content = toml::to_string(&local).context("failed to serialize local config")?;
             fs::write(&local_path, content)
                 .with_context(|| format!("failed to write {}", local_path.display()))?;
@@ -50,7 +50,7 @@ impl ProjectRepository for TomlProjectRepository {
 
         // Write portable file
         let project_path = self.project_path(&config.project.name);
-        fs::create_dir_all(project_path.parent().unwrap())?;
+        fs::create_dir_all(project_path.parent().expect("config path has parent"))?;
         let content = toml::to_string(&portable).context("failed to serialize project config")?;
         fs::write(&project_path, content)
             .with_context(|| format!("failed to write {}", project_path.display()))?;
