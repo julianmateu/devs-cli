@@ -1,13 +1,16 @@
-use assert_cmd::Command;
+use assert_cmd::cargo::cargo_bin_cmd;
 use predicates::prelude::*;
 use std::fs;
 use std::path::Path;
 
+fn devs_cmd() -> assert_cmd::Command {
+    cargo_bin_cmd!("devs")
+}
+
 #[test]
 fn version_flag_prints_version() {
     let version = env!("CARGO_PKG_VERSION");
-    Command::cargo_bin("devs")
-        .unwrap()
+    devs_cmd()
         .arg("--version")
         .assert()
         .success()
@@ -16,8 +19,7 @@ fn version_flag_prints_version() {
 
 #[test]
 fn from_session_conflicts_with_from() {
-    Command::cargo_bin("devs")
-        .unwrap()
+    devs_cmd()
         .args([
             "new",
             "test",
@@ -35,8 +37,7 @@ fn from_session_conflicts_with_from() {
 
 #[test]
 fn completions_generates_output() {
-    Command::cargo_bin("devs")
-        .unwrap()
+    devs_cmd()
         .args(["completions", "zsh"])
         .assert()
         .success()
@@ -46,8 +47,7 @@ fn completions_generates_output() {
 
 #[test]
 fn completions_generates_bash_output() {
-    Command::cargo_bin("devs")
-        .unwrap()
+    devs_cmd()
         .args(["completions", "bash"])
         .assert()
         .success()
@@ -58,8 +58,7 @@ fn completions_generates_bash_output() {
 #[test]
 fn generate_man_creates_files() {
     let dir = tempfile::tempdir().unwrap();
-    Command::cargo_bin("devs")
-        .unwrap()
+    devs_cmd()
         .args(["generate-man", dir.path().to_str().unwrap()])
         .assert()
         .success()
@@ -72,8 +71,7 @@ fn generate_man_creates_files() {
 #[test]
 fn generate_man_produces_valid_roff() {
     let dir = tempfile::tempdir().unwrap();
-    Command::cargo_bin("devs")
-        .unwrap()
+    devs_cmd()
         .args(["generate-man", dir.path().to_str().unwrap()])
         .assert()
         .success();
@@ -88,8 +86,7 @@ fn generate_man_creates_output_directory() {
     let dir = tempfile::tempdir().unwrap();
     let nested = dir.path().join("a").join("b").join("man1");
 
-    Command::cargo_bin("devs")
-        .unwrap()
+    devs_cmd()
         .args(["generate-man", nested.to_str().unwrap()])
         .assert()
         .success();
@@ -99,8 +96,7 @@ fn generate_man_creates_output_directory() {
 
 #[test]
 fn tmux_help_prints_reference() {
-    Command::cargo_bin("devs")
-        .unwrap()
+    devs_cmd()
         .args(["tmux-help"])
         .assert()
         .success()
@@ -113,8 +109,7 @@ fn tmux_help_prints_reference() {
 #[test]
 fn new_path_is_optional_in_help() {
     // --path should be listed under [OPTIONS], not as a required argument
-    Command::cargo_bin("devs")
-        .unwrap()
+    devs_cmd()
         .args(["new", "--help"])
         .assert()
         .success()
@@ -125,8 +120,7 @@ fn new_path_is_optional_in_help() {
 
 #[test]
 fn init_requires_name_argument() {
-    Command::cargo_bin("devs")
-        .unwrap()
+    devs_cmd()
         .args(["init"])
         .assert()
         .failure()
@@ -135,8 +129,7 @@ fn init_requires_name_argument() {
 
 #[test]
 fn init_help_shows_description() {
-    Command::cargo_bin("devs")
-        .unwrap()
+    devs_cmd()
         .args(["init", "--help"])
         .assert()
         .success()
@@ -145,8 +138,7 @@ fn init_help_shows_description() {
 
 #[test]
 fn docs_mention_all_subcommands() {
-    let output = Command::cargo_bin("devs")
-        .unwrap()
+    let output = devs_cmd()
         .arg("--help")
         .output()
         .expect("failed to run devs --help");
