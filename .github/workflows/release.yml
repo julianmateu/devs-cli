@@ -8,10 +8,24 @@ on:
 permissions:
   contents: write
 
+env:
+  HOMEBREW_TAP: julianmateu/homebrew-devs
+
 jobs:
   ci:
     name: CI
     uses: ./.github/workflows/ci.yml
+
+  publish-crate:
+    name: Publish to crates.io
+    needs: ci
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo publish
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
 
   build:
     name: Build ${{ matrix.target }}
@@ -85,3 +99,94 @@ jobs:
           files: |
             artifacts/devs-*.tar.gz
             artifacts/checksums.txt
+
+  update-homebrew:
+    name: Update Homebrew Tap
+    needs: release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Extract version
+        id: version
+        run: echo "version=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
+
+      - name: Compute checksums
+        id: checksums
+        run: |
+          cd artifacts
+          for dir in devs-*/; do
+            mv "$dir"/*.tar.gz . 2>/dev/null || true
+          done
+          echo "sha256_aarch64_apple=$(sha256sum devs-aarch64-apple-darwin.tar.gz | cut -d' ' -f1)" >> $GITHUB_OUTPUT
+          echo "sha256_x86_64_apple=$(sha256sum devs-x86_64-apple-darwin.tar.gz | cut -d' ' -f1)" >> $GITHUB_OUTPUT
+          echo "sha256_x86_64_linux=$(sha256sum devs-x86_64-unknown-linux-gnu.tar.gz | cut -d' ' -f1)" >> $GITHUB_OUTPUT
+          echo "sha256_aarch64_linux=$(sha256sum devs-aarch64-unknown-linux-gnu.tar.gz | cut -d' ' -f1)" >> $GITHUB_OUTPUT
+
+      - name: Generate formula
+        env:
+          SOURCE_REPO: ${{ github.repository }}
+          VERSION: ${{ steps.version.outputs.version }}
+          SHA256_AARCH64_APPLE: ${{ steps.checksums.outputs.sha256_aarch64_apple }}
+          SHA256_X86_64_APPLE: ${{ steps.checksums.outputs.sha256_x86_64_apple }}
+          SHA256_X86_64_LINUX: ${{ steps.checksums.outputs.sha256_x86_64_linux }}
+          SHA256_AARCH64_LINUX: ${{ steps.checksums.outputs.sha256_aarch64_linux }}
+        run: |
+          cat > devs.rb << EOF
+          class Devs < Formula
+            desc "Project-aware tmux session manager with Claude Code session tracking"
+            homepage "https://github.com/${SOURCE_REPO}"
+            license "MIT"
+            version "${VERSION}"
+
+            on_macos do
+              on_arm do
+                url "https://github.com/${SOURCE_REPO}/releases/download/v${VERSION}/devs-aarch64-apple-darwin.tar.gz"
+                sha256 "${SHA256_AARCH64_APPLE}"
+              end
+              on_intel do
+                url "https://github.com/${SOURCE_REPO}/releases/download/v${VERSION}/devs-x86_64-apple-darwin.tar.gz"
+                sha256 "${SHA256_X86_64_APPLE}"
+              end
+            end
+
+            on_linux do
+              on_arm do
+                url "https://github.com/${SOURCE_REPO}/releases/download/v${VERSION}/devs-aarch64-unknown-linux-gnu.tar.gz"
+                sha256 "${SHA256_AARCH64_LINUX}"
+              end
+              on_intel do
+                url "https://github.com/${SOURCE_REPO}/releases/download/v${VERSION}/devs-x86_64-unknown-linux-gnu.tar.gz"
+                sha256 "${SHA256_X86_64_LINUX}"
+              end
+            end
+
+            def install
+              bin.install "devs"
+            end
+
+            test do
+              assert_match version.to_s, shell_output("#{bin}/devs --version")
+            end
+          end
+          EOF
+
+          echo "Generated formula:"
+          cat devs.rb
+
+      - name: Push to Homebrew tap
+        env:
+          TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+        run: |
+          git clone https://x-access-token:${TAP_TOKEN}@github.com/${{ env.HOMEBREW_TAP }}.git tap
+          mkdir -p tap/Formula
+          cp devs.rb tap/Formula/devs.rb
+          cd tap
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Formula/devs.rb
+          git commit -m "Update devs to ${{ steps.version.outputs.version }}"
+          git push
