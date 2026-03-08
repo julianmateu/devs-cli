@@ -1,6 +1,7 @@
 pub mod config_version;
 pub mod iterm_terminal_adapter;
 pub mod migration;
+pub mod noop_terminal_adapter;
 pub mod os_process_launcher;
 pub mod shell_tmux_adapter;
 pub mod split_config;

@@ -13,6 +13,7 @@ use clap::Parser;
 
 use adapters::iterm_terminal_adapter::ItermTerminalAdapter;
 use adapters::migration;
+use adapters::noop_terminal_adapter::NoopTerminalAdapter;
 use adapters::os_process_launcher::OsProcessLauncher;
 use adapters::shell_tmux_adapter::ShellTmuxAdapter;
 use adapters::toml_local_config::TomlLocalConfig;
@@ -20,6 +21,7 @@ use adapters::toml_project_repository::TomlProjectRepository;
 use cli::{Cli, Commands};
 use domain::layout::Layout;
 use ports::local_config::LocalConfigReader;
+use ports::terminal_adapter::TerminalAdapter;
 use ports::tmux_adapter::TmuxAdapter;
 
 fn config_dir() -> PathBuf {
@@ -60,7 +62,12 @@ fn main() -> Result<()> {
     migration::migrate_if_needed(&config_dir)?;
     let repo = TomlProjectRepository::new(config_dir.clone());
     let tmux = ShellTmuxAdapter;
-    let terminal = ItermTerminalAdapter::new();
+    let terminal: Box<dyn TerminalAdapter> =
+        if std::env::var("TERM_PROGRAM").as_deref() == Ok("iTerm.app") {
+            Box::new(ItermTerminalAdapter::new())
+        } else {
+            Box::new(NoopTerminalAdapter)
+        };
     let launcher = OsProcessLauncher;
     let local_config_adapter = TomlLocalConfig;
 
@@ -97,12 +104,14 @@ fn main() -> Result<()> {
         Commands::Remove { name, force, kill } => {
             cli::remove::run(&repo, &tmux, &name, force, kill)?
         }
-        Commands::Close { name, save } => cli::close::run(&repo, &tmux, &terminal, &name, save)?,
+        Commands::Close { name, save } => {
+            cli::close::run(&repo, &tmux, terminal.as_ref(), &name, save)?
+        }
         Commands::Open {
             name,
             default,
             saved,
-        } => cli::open::run(&repo, &tmux, &terminal, &name, default, saved)?,
+        } => cli::open::run(&repo, &tmux, terminal.as_ref(), &name, default, saved)?,
         Commands::Save { name, as_default } => cli::save::run(&repo, &tmux, &name, as_default)?,
         Commands::Reset { name } => cli::reset::run(&repo, &name)?,
         Commands::Claude {
