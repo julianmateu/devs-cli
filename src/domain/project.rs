@@ -28,8 +28,6 @@ pub struct ProjectMetadata {
     pub created_at: DateTime<Utc>,
 }
 
-const INVALID_NAME_CHARS: &[char] = &['.', ':', ' '];
-
 pub fn validate_hex_color(color: &str) -> Result<(), ProjectError> {
     let hex = color.strip_prefix('#').unwrap_or(color);
     if hex.len() != 6 || !hex.chars().all(|c| c.is_ascii_hexdigit()) {
@@ -45,13 +43,19 @@ impl ProjectMetadata {
         if self.name.is_empty() {
             return Err(ProjectError::InvalidName {
                 name: self.name.clone(),
-                reason: String::from("is empty"),
+                reason: String::from("must not be empty"),
             });
         }
-        if let Some(c) = self.name.chars().find(|c| INVALID_NAME_CHARS.contains(c)) {
+        if let Some(c) = self
+            .name
+            .chars()
+            .find(|c| !(c.is_ascii_alphanumeric() || *c == '-' || *c == '_'))
+        {
             return Err(ProjectError::InvalidName {
                 name: self.name.clone(),
-                reason: format!("contains invalid character '{c}'"),
+                reason: format!(
+                    "contains '{c}'; names may only contain letters, digits, hyphens, and underscores"
+                ),
             });
         }
         if let Some(color) = &self.color {
@@ -280,6 +284,53 @@ command = "nvim"
             meta.validate(),
             Err(ProjectError::InvalidColor { .. })
         ));
+    }
+
+    #[test]
+    fn validate_rejects_name_with_slash() {
+        let meta = ProjectMetadata {
+            name: "my/project".to_string(),
+            ..valid_metadata()
+        };
+        assert!(matches!(
+            meta.validate(),
+            Err(ProjectError::InvalidName { .. })
+        ));
+    }
+
+    #[test]
+    fn validate_accepts_hyphens_underscores_digits() {
+        let meta = ProjectMetadata {
+            name: "my-project_2".to_string(),
+            ..valid_metadata()
+        };
+        assert!(meta.validate().is_ok());
+    }
+
+    #[test]
+    fn validate_empty_name_says_must_not_be_empty() {
+        let meta = ProjectMetadata {
+            name: "".to_string(),
+            ..valid_metadata()
+        };
+        let err = meta.validate().unwrap_err().to_string();
+        assert!(
+            err.contains("must not be empty"),
+            "error should say 'must not be empty', got: {err}"
+        );
+    }
+
+    #[test]
+    fn validate_invalid_char_shows_allowed_set() {
+        let meta = ProjectMetadata {
+            name: "my.project".to_string(),
+            ..valid_metadata()
+        };
+        let err = meta.validate().unwrap_err().to_string();
+        assert!(
+            err.contains("letters, digits, hyphens, and underscores"),
+            "error should describe valid characters, got: {err}"
+        );
     }
 
     #[test]
