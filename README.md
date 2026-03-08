@@ -1,5 +1,9 @@
 # devs
 
+[![CI](https://github.com/julianmateu/devs-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/julianmateu/devs-cli/actions/workflows/ci.yml)
+[![crates.io](https://img.shields.io/crates/v/devs-cli.svg)](https://crates.io/crates/devs-cli)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
 A project-aware tmux session manager that remembers your layouts, tracks Claude Code sessions, and sets iTerm2 tab colors.
 
 ## What is this?
@@ -29,9 +33,21 @@ It is additive, not a cage. Direct tmux interaction is never blocked. `devs` add
 
 ### Prerequisites
 
-- [Rust toolchain](https://rustup.rs/) (stable)
 - [tmux](https://github.com/tmux/tmux) (3.2+ recommended for tab color passthrough)
 - iTerm2 (optional -- tab colors are silently ignored in other terminals)
+
+### Homebrew (macOS and Linux)
+
+```bash
+brew tap julianmateu/devs
+brew install devs
+```
+
+### Cargo (any platform with Rust)
+
+```bash
+cargo install devs-cli
+```
 
 ### Build from source
 
