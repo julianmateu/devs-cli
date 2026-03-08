@@ -93,7 +93,7 @@ fn main() -> Result<()> {
         Commands::List => cli::list::run(&repo)?,
         Commands::Status => cli::status::run(&repo, &tmux)?,
         Commands::Config { name } => cli::config::run(&repo, &name)?,
-        Commands::Edit { name } => cli::edit::run(&name, &config_dir)?,
+        Commands::Edit { name } => cli::edit::run(&repo, &name, &config_dir)?,
         Commands::Remove { name, force, kill } => {
             cli::remove::run(&repo, &tmux, &name, force, kill)?
         }
