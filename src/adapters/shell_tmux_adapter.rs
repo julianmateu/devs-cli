@@ -101,6 +101,10 @@ fn resolve_pane_command(shell_pid: u32, fallback_command: &str) -> String {
 
 impl ShellTmuxAdapter {
     fn run_tmux(&self, args: &[&str]) -> Result<()> {
+        anyhow::ensure!(
+            !args.is_empty(),
+            "tmux command requires at least one argument"
+        );
         let status = Command::new("tmux")
             .args(args)
             .status()
@@ -112,6 +116,10 @@ impl ShellTmuxAdapter {
     }
 
     fn run_tmux_output(&self, args: &[&str]) -> Result<String> {
+        anyhow::ensure!(
+            !args.is_empty(),
+            "tmux command requires at least one argument"
+        );
         let output = Command::new("tmux")
             .args(args)
             .output()
@@ -119,7 +127,7 @@ impl ShellTmuxAdapter {
         if !output.status.success() {
             bail!("tmux {} failed", args[0]);
         }
-        Ok(String::from_utf8(output.stdout)?.trim().to_string())
+        Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
     }
 }
 
