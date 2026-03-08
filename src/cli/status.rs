@@ -97,72 +97,86 @@ pub fn run(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::adapters::toml_project_repository::TomlProjectRepository;
-    use crate::test_support::MockTmuxAdapter;
-    use tempfile::tempdir;
+    use crate::test_support::{InMemoryProjectRepository, MockTmuxAdapter};
 
-    #[test]
-    fn status_no_projects() {
-        let dir = tempdir().unwrap();
-        let repo = TomlProjectRepository::new(dir.path().to_path_buf());
-        let tmux = MockTmuxAdapter::no_session();
-        let mut out = Vec::new();
-
-        assert!(run(&repo, &tmux, &mut out).is_ok());
+    fn output_string(out: &[u8]) -> String {
+        String::from_utf8(out.to_vec()).unwrap()
     }
 
     #[test]
-    fn status_single_project_alive() {
-        let dir = tempdir().unwrap();
-        let repo = TomlProjectRepository::new(dir.path().to_path_buf());
+    fn status_no_projects() {
+        let repo = InMemoryProjectRepository::new();
+        let tmux = MockTmuxAdapter::no_session();
+        let mut out = Vec::new();
+
+        run(&repo, &tmux, &mut out).unwrap();
+
+        assert_eq!(output_string(&out), "No projects registered.\n");
+    }
+
+    #[test]
+    fn status_shows_header_row() {
+        let repo = InMemoryProjectRepository::new();
+        crate::cli::new::run(
+            &repo,
+            crate::cli::new::NewProjectParams::new("proj", "/some/path"),
+        )
+        .unwrap();
+        let tmux = MockTmuxAdapter::no_session();
+        let mut out = Vec::new();
+
+        run(&repo, &tmux, &mut out).unwrap();
+
+        let text = output_string(&out);
+        let first_line = text.lines().next().unwrap();
+        assert!(
+            first_line.contains("PROJECT"),
+            "header should contain PROJECT"
+        );
+        assert!(first_line.contains("TMUX"), "header should contain TMUX");
+        assert!(
+            first_line.contains("CLAUDE"),
+            "header should contain CLAUDE"
+        );
+    }
+
+    #[test]
+    fn status_alive_session_with_note() {
+        let repo = InMemoryProjectRepository::new();
         crate::cli::new::run(
             &repo,
             crate::cli::new::NewProjectParams::new("proj", "/some/path"),
         )
         .unwrap();
         crate::cli::note::run(&repo, "proj", "implement step 4").unwrap();
-
         let tmux = MockTmuxAdapter::with_session("", vec![]);
         let mut out = Vec::new();
 
-        assert!(run(&repo, &tmux, &mut out).is_ok());
+        run(&repo, &tmux, &mut out).unwrap();
+
+        let text = output_string(&out);
+        assert!(text.contains("alive"), "should show alive status");
+        assert!(
+            text.contains("implement step 4"),
+            "should show last note content"
+        );
     }
 
     #[test]
     fn status_dead_session_no_notes() {
-        let dir = tempdir().unwrap();
-        let repo = TomlProjectRepository::new(dir.path().to_path_buf());
+        let repo = InMemoryProjectRepository::new();
         crate::cli::new::run(
             &repo,
             crate::cli::new::NewProjectParams::new("proj", "/some/path"),
         )
         .unwrap();
-
         let tmux = MockTmuxAdapter::no_session();
         let mut out = Vec::new();
 
-        assert!(run(&repo, &tmux, &mut out).is_ok());
-    }
+        run(&repo, &tmux, &mut out).unwrap();
 
-    #[test]
-    fn status_multiple_projects() {
-        let dir = tempdir().unwrap();
-        let repo = TomlProjectRepository::new(dir.path().to_path_buf());
-        crate::cli::new::run(
-            &repo,
-            crate::cli::new::NewProjectParams::new("alpha", "/some/alpha"),
-        )
-        .unwrap();
-        crate::cli::new::run(
-            &repo,
-            crate::cli::new::NewProjectParams::new("beta", "/some/beta"),
-        )
-        .unwrap();
-        crate::cli::note::run(&repo, "alpha", "note for alpha").unwrap();
-
-        let tmux = MockTmuxAdapter::no_session();
-        let mut out = Vec::new();
-
-        assert!(run(&repo, &tmux, &mut out).is_ok());
+        let text = output_string(&out);
+        assert!(text.contains("dead"), "should show dead status");
+        assert!(text.contains("--"), "should show -- for no notes");
     }
 }

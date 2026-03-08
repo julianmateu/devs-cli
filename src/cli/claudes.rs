@@ -40,18 +40,18 @@ pub fn run(repo: &dyn ProjectRepository, name: &str, all: bool, out: &mut dyn Wr
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::adapters::toml_project_repository::TomlProjectRepository;
     use crate::domain::claude_session::{ClaudeSession, ClaudeSessionStatus};
     use crate::domain::test_helpers::dt;
-    use tempfile::tempdir;
+    use crate::test_support::InMemoryProjectRepository;
 
-    fn test_repo() -> (TomlProjectRepository, tempfile::TempDir) {
-        let dir = tempdir().unwrap();
-        let repo = TomlProjectRepository::new(dir.path().to_path_buf());
-        (repo, dir)
+    fn output_string(out: &[u8]) -> String {
+        String::from_utf8(out.to_vec()).unwrap()
     }
 
-    fn create_project_with_sessions(repo: &TomlProjectRepository, sessions: Vec<ClaudeSession>) {
+    fn create_project_with_sessions(
+        repo: &InMemoryProjectRepository,
+        sessions: Vec<ClaudeSession>,
+    ) {
         crate::cli::new::run(
             repo,
             crate::cli::new::NewProjectParams::new("myproject", "/some/path"),
@@ -64,7 +64,7 @@ mod tests {
 
     #[test]
     fn list_shows_active_sessions_by_default() {
-        let (repo, _dir) = test_repo();
+        let repo = InMemoryProjectRepository::new();
         create_project_with_sessions(
             &repo,
             vec![
@@ -84,13 +84,20 @@ mod tests {
         );
         let mut out = Vec::new();
 
-        let result = run(&repo, "myproject", false, &mut out);
-        assert!(result.is_ok());
+        run(&repo, "myproject", false, &mut out).unwrap();
+
+        let text = output_string(&out);
+        assert!(
+            text.contains("brainstorm"),
+            "should show active session label"
+        );
+        assert!(text.contains("id-1"), "should show active session ID");
+        assert!(!text.contains("refactor"), "should not show done session");
     }
 
     #[test]
     fn list_with_all_includes_done_sessions() {
-        let (repo, _dir) = test_repo();
+        let repo = InMemoryProjectRepository::new();
         create_project_with_sessions(
             &repo,
             vec![
@@ -110,13 +117,17 @@ mod tests {
         );
         let mut out = Vec::new();
 
-        let result = run(&repo, "myproject", true, &mut out);
-        assert!(result.is_ok());
+        run(&repo, "myproject", true, &mut out).unwrap();
+
+        let text = output_string(&out);
+        assert!(text.contains("brainstorm"), "should show active session");
+        assert!(text.contains("refactor"), "should show done session");
+        assert!(text.contains("done"), "should show done status");
     }
 
     #[test]
-    fn list_empty_sessions() {
-        let (repo, _dir) = test_repo();
+    fn list_empty_sessions_shows_message() {
+        let repo = InMemoryProjectRepository::new();
         crate::cli::new::run(
             &repo,
             crate::cli::new::NewProjectParams::new("myproject", "/some/path"),
@@ -124,13 +135,14 @@ mod tests {
         .unwrap();
         let mut out = Vec::new();
 
-        let result = run(&repo, "myproject", false, &mut out);
-        assert!(result.is_ok());
+        run(&repo, "myproject", false, &mut out).unwrap();
+
+        assert_eq!(output_string(&out), "No Claude sessions for 'myproject'.\n");
     }
 
     #[test]
     fn list_fails_for_missing_project() {
-        let (repo, _dir) = test_repo();
+        let repo = InMemoryProjectRepository::new();
         let mut out = Vec::new();
 
         let result = run(&repo, "nonexistent", false, &mut out);
@@ -139,7 +151,7 @@ mod tests {
 
     #[test]
     fn list_only_done_sessions_shows_empty_without_all() {
-        let (repo, _dir) = test_repo();
+        let repo = InMemoryProjectRepository::new();
         create_project_with_sessions(
             &repo,
             vec![ClaudeSession {
@@ -151,7 +163,11 @@ mod tests {
         );
         let mut out = Vec::new();
 
-        let result = run(&repo, "myproject", false, &mut out);
-        assert!(result.is_ok());
+        run(&repo, "myproject", false, &mut out).unwrap();
+
+        assert!(
+            output_string(&out).contains("No Claude sessions"),
+            "should show no sessions message"
+        );
     }
 }

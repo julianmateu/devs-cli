@@ -34,36 +34,25 @@ pub fn run(repo: &dyn ProjectRepository, out: &mut dyn Write) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::adapters::toml_project_repository::TomlProjectRepository;
-    use tempfile::tempdir;
+    use crate::test_support::InMemoryProjectRepository;
 
-    #[test]
-    fn list_succeeds_when_empty() {
-        let dir = tempdir().unwrap();
-        let repo = TomlProjectRepository::new(dir.path().to_path_buf());
-        let mut out = Vec::new();
-
-        assert!(run(&repo, &mut out).is_ok());
+    fn output_string(out: &[u8]) -> String {
+        String::from_utf8(out.to_vec()).unwrap()
     }
 
     #[test]
-    fn list_succeeds_with_projects() {
-        let dir = tempdir().unwrap();
-        let repo = TomlProjectRepository::new(dir.path().to_path_buf());
-        crate::cli::new::run(
-            &repo,
-            crate::cli::new::NewProjectParams::new("test-project", "/some/path"),
-        )
-        .unwrap();
+    fn list_empty_shows_message() {
+        let repo = InMemoryProjectRepository::new();
         let mut out = Vec::new();
 
-        assert!(run(&repo, &mut out).is_ok());
+        run(&repo, &mut out).unwrap();
+
+        assert_eq!(output_string(&out), "No projects registered.\n");
     }
 
     #[test]
-    fn list_shows_paths() {
-        let dir = tempdir().unwrap();
-        let repo = TomlProjectRepository::new(dir.path().to_path_buf());
+    fn list_shows_project_names_and_paths() {
+        let repo = InMemoryProjectRepository::new();
         crate::cli::new::run(
             &repo,
             crate::cli::new::NewProjectParams::new("alpha", "/usr/local/alpha"),
@@ -76,6 +65,43 @@ mod tests {
         .unwrap();
         let mut out = Vec::new();
 
-        assert!(run(&repo, &mut out).is_ok());
+        run(&repo, &mut out).unwrap();
+
+        let text = output_string(&out);
+        assert!(
+            text.contains("alpha"),
+            "should contain project name 'alpha'"
+        );
+        assert!(text.contains("beta"), "should contain project name 'beta'");
+        assert!(
+            text.contains("/usr/local/alpha"),
+            "should contain path for alpha"
+        );
+        assert!(
+            text.contains("/usr/local/beta"),
+            "should contain path for beta"
+        );
+    }
+
+    #[test]
+    fn list_column_aligned() {
+        let repo = InMemoryProjectRepository::new();
+        crate::cli::new::run(&repo, crate::cli::new::NewProjectParams::new("short", "/a")).unwrap();
+        crate::cli::new::run(
+            &repo,
+            crate::cli::new::NewProjectParams::new("longername", "/b"),
+        )
+        .unwrap();
+        let mut out = Vec::new();
+
+        run(&repo, &mut out).unwrap();
+
+        let text = output_string(&out);
+        let lines: Vec<&str> = text.lines().collect();
+        assert_eq!(lines.len(), 2);
+        // Both lines should have the same column offset for the path
+        let path_offset_0 = lines[0].find("/b").unwrap();
+        let path_offset_1 = lines[1].find("/a").unwrap();
+        assert_eq!(path_offset_0, path_offset_1, "paths should be aligned");
     }
 }
