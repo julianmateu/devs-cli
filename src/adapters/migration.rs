@@ -5,7 +5,6 @@ use anyhow::{Context, Result};
 
 use crate::adapters::config_version;
 use crate::adapters::split_config;
-use crate::domain::path::abbreviate_home;
 use crate::domain::project::ProjectConfig;
 
 const CURRENT_VERSION: u32 = 2;
@@ -61,7 +60,9 @@ fn migrate_v1_to_v2(config_dir: &Path) -> Result<()> {
             .with_context(|| format!("failed to parse {}", path.display()))?;
 
         // Abbreviate path
-        config.project.path = abbreviate_home(&config.project.path);
+        let home_dir = dirs::home_dir().map(|p| p.to_string_lossy().into_owned());
+        config.project.path =
+            crate::domain::path::abbreviate_home(&config.project.path, home_dir.as_deref());
 
         // Split into portable + local
         let (portable, local) = split_config::split(&config);

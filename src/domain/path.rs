@@ -1,9 +1,8 @@
-pub fn abbreviate_home(path: &str) -> String {
-    match dirs::home_dir() {
+pub fn abbreviate_home(path: &str, home_dir: Option<&str>) -> String {
+    match home_dir {
         Some(home) => {
-            let home_str = home.to_string_lossy();
-            let home_prefix = format!("{home_str}/");
-            if path == home_str.as_ref() {
+            let home_prefix = format!("{home}/");
+            if path == home {
                 "~".to_string()
             } else if let Some(rest) = path.strip_prefix(&home_prefix) {
                 format!("~/{rest}")
@@ -15,14 +14,13 @@ pub fn abbreviate_home(path: &str) -> String {
     }
 }
 
-pub fn expand_home(path: &str) -> String {
-    match dirs::home_dir() {
+pub fn expand_home(path: &str, home_dir: Option<&str>) -> String {
+    match home_dir {
         Some(home) => {
-            let home_str = home.to_string_lossy();
             if path == "~" {
-                home_str.into_owned()
+                home.to_string()
             } else if let Some(rest) = path.strip_prefix("~/") {
-                format!("{home_str}/{rest}")
+                format!("{home}/{rest}")
             } else {
                 path.to_string()
             }
@@ -35,73 +33,95 @@ pub fn expand_home(path: &str) -> String {
 mod tests {
     use super::*;
 
+    const HOME: &str = "/Users/testuser";
+
     #[test]
     fn abbreviates_home_prefix() {
-        let home = dirs::home_dir().unwrap();
-        let path = format!("{}/src/project", home.display());
-        assert_eq!(abbreviate_home(&path), "~/src/project");
+        assert_eq!(
+            abbreviate_home("/Users/testuser/src/project", Some(HOME)),
+            "~/src/project"
+        );
     }
 
     #[test]
     fn abbreviates_home_dir_itself() {
-        let home = dirs::home_dir().unwrap();
-        assert_eq!(abbreviate_home(&home.to_string_lossy()), "~");
+        assert_eq!(abbreviate_home("/Users/testuser", Some(HOME)), "~");
     }
 
     #[test]
     fn leaves_non_home_paths_unchanged() {
-        assert_eq!(abbreviate_home("/usr/local/bin"), "/usr/local/bin");
+        assert_eq!(
+            abbreviate_home("/usr/local/bin", Some(HOME)),
+            "/usr/local/bin"
+        );
     }
 
     #[test]
     fn leaves_similar_prefix_paths_unchanged() {
-        let home = dirs::home_dir().unwrap();
-        let path = format!("{}extra/project", home.display());
-        assert_eq!(abbreviate_home(&path), path);
+        assert_eq!(
+            abbreviate_home("/Users/testuserextra/project", Some(HOME)),
+            "/Users/testuserextra/project"
+        );
     }
 
     #[test]
     fn leaves_relative_paths_unchanged() {
-        assert_eq!(abbreviate_home("src/main.rs"), "src/main.rs");
+        assert_eq!(abbreviate_home("src/main.rs", Some(HOME)), "src/main.rs");
+    }
+
+    #[test]
+    fn abbreviate_home_none_returns_path() {
+        assert_eq!(
+            abbreviate_home("/Users/testuser/src/project", None),
+            "/Users/testuser/src/project"
+        );
     }
 
     #[test]
     fn expand_home_tilde_prefix() {
-        let home = dirs::home_dir().unwrap();
-        let expected = format!("{}/src/proj", home.display());
-        assert_eq!(expand_home("~/src/proj"), expected);
+        assert_eq!(
+            expand_home("~/src/proj", Some(HOME)),
+            "/Users/testuser/src/proj"
+        );
     }
 
     #[test]
     fn expand_home_tilde_alone() {
-        let home = dirs::home_dir().unwrap();
-        assert_eq!(expand_home("~"), home.to_string_lossy().as_ref());
+        assert_eq!(expand_home("~", Some(HOME)), "/Users/testuser");
     }
 
     #[test]
     fn expand_home_absolute_unchanged() {
-        assert_eq!(expand_home("/usr/local"), "/usr/local");
+        assert_eq!(expand_home("/usr/local", Some(HOME)), "/usr/local");
     }
 
     #[test]
     fn expand_home_relative_unchanged() {
-        assert_eq!(expand_home("src/main.rs"), "src/main.rs");
+        assert_eq!(expand_home("src/main.rs", Some(HOME)), "src/main.rs");
     }
 
     #[test]
     fn expand_home_tilde_in_middle_unchanged() {
-        assert_eq!(expand_home("/foo/~bar"), "/foo/~bar");
+        assert_eq!(expand_home("/foo/~bar", Some(HOME)), "/foo/~bar");
     }
 
     #[test]
     fn expand_home_tilde_user_unchanged() {
-        assert_eq!(expand_home("~bob/foo"), "~bob/foo");
+        assert_eq!(expand_home("~bob/foo", Some(HOME)), "~bob/foo");
+    }
+
+    #[test]
+    fn expand_home_none_returns_path() {
+        assert_eq!(expand_home("~/src/proj", None), "~/src/proj");
     }
 
     #[test]
     fn expand_and_abbreviate_roundtrip() {
-        let home = dirs::home_dir().unwrap();
-        let absolute = format!("{}/src/proj", home.display());
-        assert_eq!(expand_home(&abbreviate_home(&absolute)), absolute);
+        let absolute = "/Users/testuser/src/proj";
+        let home = Some(HOME);
+        assert_eq!(
+            expand_home(&abbreviate_home(absolute, home), home),
+            absolute
+        );
     }
 }
