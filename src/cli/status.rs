@@ -1,3 +1,5 @@
+use std::io::Write;
+
 use anyhow::Result;
 
 use crate::domain::claude_session::ClaudeSessionStatus;
@@ -14,10 +16,14 @@ struct ProjectRow {
     last_note: String,
 }
 
-pub fn run(repo: &dyn ProjectRepository, tmux: &dyn TmuxAdapter) -> Result<()> {
+pub fn run(
+    repo: &dyn ProjectRepository,
+    tmux: &dyn TmuxAdapter,
+    out: &mut dyn Write,
+) -> Result<()> {
     let names = repo.list()?;
     if names.is_empty() {
-        println!("No projects registered.");
+        writeln!(out, "No projects registered.")?;
         return Ok(());
     }
 
@@ -57,7 +63,7 @@ pub fn run(repo: &dyn ProjectRepository, tmux: &dyn TmuxAdapter) -> Result<()> {
         .collect();
 
     if rows.is_empty() {
-        println!("No projects could be loaded.");
+        writeln!(out, "No projects could be loaded.")?;
         return Ok(());
     }
 
@@ -71,16 +77,18 @@ pub fn run(repo: &dyn ProjectRepository, tmux: &dyn TmuxAdapter) -> Result<()> {
         .unwrap_or(0)
         .max(6);
 
-    println!(
+    writeln!(
+        out,
         "{:<w_name$}   {:<w_path$}   {:<w_tmux$}   {:<w_claude$}   LAST NOTE",
         "PROJECT", "PATH", "TMUX", "CLAUDE"
-    );
+    )?;
 
     for row in &rows {
-        println!(
+        writeln!(
+            out,
             "{:<w_name$}   {:<w_path$}   {:<w_tmux$}   {:<w_claude$}   {}",
             row.name, row.path, row.tmux, row.claude, row.last_note
-        );
+        )?;
     }
 
     Ok(())
@@ -98,8 +106,9 @@ mod tests {
         let dir = tempdir().unwrap();
         let repo = TomlProjectRepository::new(dir.path().to_path_buf());
         let tmux = MockTmuxAdapter::no_session();
+        let mut out = Vec::new();
 
-        assert!(run(&repo, &tmux).is_ok());
+        assert!(run(&repo, &tmux, &mut out).is_ok());
     }
 
     #[test]
@@ -114,8 +123,9 @@ mod tests {
         crate::cli::note::run(&repo, "proj", "implement step 4").unwrap();
 
         let tmux = MockTmuxAdapter::with_session("", vec![]);
+        let mut out = Vec::new();
 
-        assert!(run(&repo, &tmux).is_ok());
+        assert!(run(&repo, &tmux, &mut out).is_ok());
     }
 
     #[test]
@@ -129,8 +139,9 @@ mod tests {
         .unwrap();
 
         let tmux = MockTmuxAdapter::no_session();
+        let mut out = Vec::new();
 
-        assert!(run(&repo, &tmux).is_ok());
+        assert!(run(&repo, &tmux, &mut out).is_ok());
     }
 
     #[test]
@@ -150,7 +161,8 @@ mod tests {
         crate::cli::note::run(&repo, "alpha", "note for alpha").unwrap();
 
         let tmux = MockTmuxAdapter::no_session();
+        let mut out = Vec::new();
 
-        assert!(run(&repo, &tmux).is_ok());
+        assert!(run(&repo, &tmux, &mut out).is_ok());
     }
 }

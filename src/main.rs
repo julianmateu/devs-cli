@@ -90,8 +90,8 @@ fn main() -> Result<()> {
             )?
         }
         Commands::Init { name } => cli::init::run(&repo, &local_config_adapter, &name)?,
-        Commands::List => cli::list::run(&repo)?,
-        Commands::Status => cli::status::run(&repo, &tmux)?,
+        Commands::List => cli::list::run(&repo, &mut std::io::stdout())?,
+        Commands::Status => cli::status::run(&repo, &tmux, &mut std::io::stdout())?,
         Commands::Config { name } => cli::config::run(&repo, &name)?,
         Commands::Edit { name } => cli::edit::run(&repo, &name, &config_dir)?,
         Commands::Remove { name, force, kill } => {
@@ -118,7 +118,9 @@ fn main() -> Result<()> {
                 cli::claude::start(&repo, &launcher, &name, &label)?
             }
         },
-        Commands::Claudes { name, all } => cli::claudes::run(&repo, &name, all)?,
+        Commands::Claudes { name, all } => {
+            cli::claudes::run(&repo, &name, all, &mut std::io::stdout())?
+        }
         Commands::ClaudeDone { name, label } => cli::claude_done::run(&repo, &name, &label)?,
         Commands::Note { name, message } => cli::note::run(&repo, &name, &message)?,
         Commands::Notes {
@@ -126,7 +128,14 @@ fn main() -> Result<()> {
             all,
             since,
             clear,
-        } => cli::notes::run(&repo, &name, all, since.as_deref(), clear)?,
+        } => cli::notes::run(
+            &repo,
+            &name,
+            all,
+            since.as_deref(),
+            clear,
+            &mut std::io::stdout(),
+        )?,
         Commands::Completions { shell } => cli::completions::run(shell),
         Commands::TmuxHelp => cli::tmux_help::run(),
         Commands::GenerateMan { output_dir } => cli::man::run(&output_dir)?,

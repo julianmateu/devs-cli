@@ -1,9 +1,11 @@
+use std::io::Write;
+
 use anyhow::Result;
 
 use crate::domain::claude_session::ClaudeSessionStatus;
 use crate::ports::project_repository::ProjectRepository;
 
-pub fn run(repo: &dyn ProjectRepository, name: &str, all: bool) -> Result<()> {
+pub fn run(repo: &dyn ProjectRepository, name: &str, all: bool, out: &mut dyn Write) -> Result<()> {
     let config = repo.load(name)?;
     let sessions: Vec<_> = config
         .claude_sessions
@@ -12,7 +14,7 @@ pub fn run(repo: &dyn ProjectRepository, name: &str, all: bool) -> Result<()> {
         .collect();
 
     if sessions.is_empty() {
-        println!("No Claude sessions for '{name}'.");
+        writeln!(out, "No Claude sessions for '{name}'.")?;
         return Ok(());
     }
 
@@ -23,13 +25,14 @@ pub fn run(repo: &dyn ProjectRepository, name: &str, all: bool) -> Result<()> {
                 format!("done ({})", finished_at.format("%Y-%m-%d %H:%M"))
             }
         };
-        println!(
+        writeln!(
+            out,
             "{}  {}  {}  [{}]",
             session.label,
             session.id,
             session.started_at.format("%Y-%m-%d %H:%M"),
             status,
-        );
+        )?;
     }
     Ok(())
 }
@@ -79,9 +82,9 @@ mod tests {
                 },
             ],
         );
+        let mut out = Vec::new();
 
-        // Should not error; done session is filtered out by default
-        let result = run(&repo, "myproject", false);
+        let result = run(&repo, "myproject", false, &mut out);
         assert!(result.is_ok());
     }
 
@@ -105,8 +108,9 @@ mod tests {
                 },
             ],
         );
+        let mut out = Vec::new();
 
-        let result = run(&repo, "myproject", true);
+        let result = run(&repo, "myproject", true, &mut out);
         assert!(result.is_ok());
     }
 
@@ -118,16 +122,18 @@ mod tests {
             crate::cli::new::NewProjectParams::new("myproject", "/some/path"),
         )
         .unwrap();
+        let mut out = Vec::new();
 
-        let result = run(&repo, "myproject", false);
+        let result = run(&repo, "myproject", false, &mut out);
         assert!(result.is_ok());
     }
 
     #[test]
     fn list_fails_for_missing_project() {
         let (repo, _dir) = test_repo();
+        let mut out = Vec::new();
 
-        let result = run(&repo, "nonexistent", false);
+        let result = run(&repo, "nonexistent", false, &mut out);
         assert!(result.is_err());
     }
 
@@ -143,9 +149,9 @@ mod tests {
                 status: ClaudeSessionStatus::Done(dt("2026-03-01T12:00:00Z")),
             }],
         );
+        let mut out = Vec::new();
 
-        // Without --all, should show "No Claude sessions" message
-        let result = run(&repo, "myproject", false);
+        let result = run(&repo, "myproject", false, &mut out);
         assert!(result.is_ok());
     }
 }

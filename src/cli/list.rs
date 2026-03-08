@@ -1,13 +1,15 @@
+use std::io::Write;
+
 use anyhow::Result;
 
 use crate::ports::project_repository::ProjectRepository;
 
 use super::format::abbreviate_home;
 
-pub fn run(repo: &dyn ProjectRepository) -> Result<()> {
+pub fn run(repo: &dyn ProjectRepository, out: &mut dyn Write) -> Result<()> {
     let names = repo.list()?;
     if names.is_empty() {
-        println!("No projects registered.");
+        writeln!(out, "No projects registered.")?;
         return Ok(());
     }
 
@@ -23,7 +25,7 @@ pub fn run(repo: &dyn ProjectRepository) -> Result<()> {
     let w_name = rows.iter().map(|(n, _)| n.len()).max().unwrap_or(0);
 
     for (name, path) in &rows {
-        println!("{name:<w_name$}   {path}");
+        writeln!(out, "{name:<w_name$}   {path}")?;
     }
 
     Ok(())
@@ -39,8 +41,9 @@ mod tests {
     fn list_succeeds_when_empty() {
         let dir = tempdir().unwrap();
         let repo = TomlProjectRepository::new(dir.path().to_path_buf());
+        let mut out = Vec::new();
 
-        assert!(run(&repo).is_ok());
+        assert!(run(&repo, &mut out).is_ok());
     }
 
     #[test]
@@ -52,8 +55,9 @@ mod tests {
             crate::cli::new::NewProjectParams::new("test-project", "/some/path"),
         )
         .unwrap();
+        let mut out = Vec::new();
 
-        assert!(run(&repo).is_ok());
+        assert!(run(&repo, &mut out).is_ok());
     }
 
     #[test]
@@ -70,8 +74,8 @@ mod tests {
             crate::cli::new::NewProjectParams::new("beta", "/usr/local/beta"),
         )
         .unwrap();
+        let mut out = Vec::new();
 
-        // Just verify it runs without error (output is visual)
-        assert!(run(&repo).is_ok());
+        assert!(run(&repo, &mut out).is_ok());
     }
 }

@@ -1,3 +1,5 @@
+use std::io::Write;
+
 use anyhow::Result;
 
 use crate::domain::duration::parse_duration;
@@ -9,6 +11,7 @@ pub fn run(
     all: bool,
     since: Option<&str>,
     clear: bool,
+    out: &mut dyn Write,
 ) -> Result<()> {
     let mut config = repo.load(name)?;
 
@@ -16,7 +19,7 @@ pub fn run(
         let count = config.notes.len();
         config.notes.clear();
         repo.save(&config)?;
-        println!("Cleared {count} notes for '{name}'.");
+        writeln!(out, "Cleared {count} notes for '{name}'.")?;
         return Ok(());
     }
 
@@ -37,13 +40,13 @@ pub fn run(
     };
 
     if notes.is_empty() {
-        println!("No notes for '{name}'.");
+        writeln!(out, "No notes for '{name}'.")?;
         return Ok(());
     }
 
     for note in &notes {
         let ts = note.created_at.format("%Y-%m-%d %H:%M");
-        println!("[{ts}] {}", note.content);
+        writeln!(out, "[{ts}] {}", note.content)?;
     }
     Ok(())
 }
@@ -84,8 +87,9 @@ mod tests {
             })
             .collect();
         add_notes(&repo, "myproject", notes);
+        let mut out = Vec::new();
 
-        run(&repo, "myproject", false, None, false).unwrap();
+        run(&repo, "myproject", false, None, false, &mut out).unwrap();
     }
 
     #[test]
@@ -104,8 +108,9 @@ mod tests {
             })
             .collect();
         add_notes(&repo, "myproject", notes);
+        let mut out = Vec::new();
 
-        run(&repo, "myproject", true, None, false).unwrap();
+        run(&repo, "myproject", true, None, false, &mut out).unwrap();
     }
 
     #[test]
@@ -135,8 +140,9 @@ mod tests {
                 },
             ],
         );
+        let mut out = Vec::new();
 
-        run(&repo, "myproject", false, Some("2d"), false).unwrap();
+        run(&repo, "myproject", false, Some("2d"), false, &mut out).unwrap();
     }
 
     #[test]
@@ -147,8 +153,9 @@ mod tests {
             crate::cli::new::NewProjectParams::new("myproject", "/some/path"),
         )
         .unwrap();
+        let mut out = Vec::new();
 
-        let result = run(&repo, "myproject", false, Some("bad"), false);
+        let result = run(&repo, "myproject", false, Some("bad"), false, &mut out);
         assert!(result.is_err());
     }
 
@@ -175,8 +182,9 @@ mod tests {
                 },
             ],
         );
+        let mut out = Vec::new();
 
-        run(&repo, "myproject", false, None, true).unwrap();
+        run(&repo, "myproject", false, None, true, &mut out).unwrap();
 
         let config = repo.load("myproject").unwrap();
         assert!(config.notes.is_empty());
@@ -190,8 +198,9 @@ mod tests {
             crate::cli::new::NewProjectParams::new("myproject", "/some/path"),
         )
         .unwrap();
+        let mut out = Vec::new();
 
-        run(&repo, "myproject", false, None, true).unwrap();
+        run(&repo, "myproject", false, None, true, &mut out).unwrap();
 
         let config = repo.load("myproject").unwrap();
         assert!(config.notes.is_empty());
@@ -205,15 +214,17 @@ mod tests {
             crate::cli::new::NewProjectParams::new("myproject", "/some/path"),
         )
         .unwrap();
+        let mut out = Vec::new();
 
-        run(&repo, "myproject", false, None, false).unwrap();
+        run(&repo, "myproject", false, None, false, &mut out).unwrap();
     }
 
     #[test]
     fn notes_fails_for_missing_project() {
         let (repo, _dir) = test_repo();
+        let mut out = Vec::new();
 
-        let result = run(&repo, "nonexistent", false, None, false);
+        let result = run(&repo, "nonexistent", false, None, false, &mut out);
         assert!(result.is_err());
     }
 
@@ -233,7 +244,8 @@ mod tests {
             })
             .collect();
         add_notes(&repo, "myproject", notes);
+        let mut out = Vec::new();
 
-        run(&repo, "myproject", false, None, false).unwrap();
+        run(&repo, "myproject", false, None, false, &mut out).unwrap();
     }
 }
