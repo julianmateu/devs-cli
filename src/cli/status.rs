@@ -90,7 +90,7 @@ pub fn run(repo: &dyn ProjectRepository, tmux: &dyn TmuxAdapter) -> Result<()> {
 mod tests {
     use super::*;
     use crate::adapters::toml_project_repository::TomlProjectRepository;
-    use crate::domain::test_helpers::MockTmuxAdapter;
+    use crate::test_support::MockTmuxAdapter;
     use tempfile::tempdir;
 
     #[test]

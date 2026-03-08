@@ -52,7 +52,7 @@ mod tests {
     use super::*;
     use crate::adapters::toml_project_repository::TomlProjectRepository;
     use crate::domain::claude_session::ClaudeSessionStatus;
-    use crate::domain::test_helpers::MockProcessLauncher;
+    use crate::test_support::MockProcessLauncher;
     use tempfile::tempdir;
 
     fn test_repo() -> (TomlProjectRepository, tempfile::TempDir) {

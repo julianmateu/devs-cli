@@ -26,7 +26,7 @@ pub fn run(
 mod tests {
     use super::*;
     use crate::adapters::toml_project_repository::TomlProjectRepository;
-    use crate::domain::test_helpers::MockTmuxAdapter;
+    use crate::test_support::MockTmuxAdapter;
     use tempfile::tempdir;
 
     #[test]

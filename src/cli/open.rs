@@ -187,7 +187,8 @@ mod tests {
     use crate::domain::claude_session::{ClaudeSession, ClaudeSessionStatus};
     use crate::domain::layout::{Layout, MainPane, SplitDirection, SplitPane};
     use crate::domain::saved_state::{SavedPane, SavedState};
-    use crate::domain::test_helpers::{MockTerminalAdapter, MockTmuxAdapter, dt};
+    use crate::domain::test_helpers::dt;
+    use crate::test_support::{MockTerminalAdapter, MockTmuxAdapter};
     use tempfile::tempdir;
 
     fn setup_repo() -> (tempfile::TempDir, TomlProjectRepository) {

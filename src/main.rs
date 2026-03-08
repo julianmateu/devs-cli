@@ -3,6 +3,9 @@ mod cli;
 mod domain;
 mod ports;
 
+#[cfg(test)]
+pub(crate) mod test_support;
+
 use std::path::PathBuf;
 
 use anyhow::{Context, Result, bail};

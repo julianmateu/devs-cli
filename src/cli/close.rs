@@ -34,7 +34,7 @@ mod tests {
     use super::*;
     use crate::adapters::toml_project_repository::TomlProjectRepository;
     use crate::domain::saved_state::SavedPane;
-    use crate::domain::test_helpers::{MockTerminalAdapter, MockTmuxAdapter};
+    use crate::test_support::{MockTerminalAdapter, MockTmuxAdapter};
     use tempfile::tempdir;
 
     fn setup() -> (TomlProjectRepository, tempfile::TempDir) {

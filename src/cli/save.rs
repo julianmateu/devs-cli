@@ -82,7 +82,7 @@ mod tests {
     use crate::adapters::toml_project_repository::TomlProjectRepository;
     use crate::domain::layout::{Layout, MainPane, SplitDirection, SplitPane};
     use crate::domain::saved_state::SavedPane;
-    use crate::domain::test_helpers::MockTmuxAdapter;
+    use crate::test_support::MockTmuxAdapter;
     use tempfile::tempdir;
 
     #[test]
