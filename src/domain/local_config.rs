@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 use crate::domain::layout::Layout;
+use crate::domain::project::{ProjectError, validate_hex_color};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct LocalConfig {
@@ -8,6 +9,15 @@ pub struct LocalConfig {
     pub color: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub layout: Option<Layout>,
+}
+
+impl LocalConfig {
+    pub fn validate(&self) -> Result<(), ProjectError> {
+        if let Some(color) = &self.color {
+            validate_hex_color(color)?;
+        }
+        Ok(())
+    }
 }
 
 #[cfg(test)]
@@ -92,5 +102,35 @@ split = "bottom-right"
         let config: LocalConfig = toml::from_str("").unwrap();
         assert_eq!(config.color, None);
         assert_eq!(config.layout, None);
+    }
+
+    #[test]
+    fn validate_accepts_valid_color() {
+        let config = LocalConfig {
+            color: Some("#61afef".to_string()),
+            layout: None,
+        };
+        assert!(config.validate().is_ok());
+    }
+
+    #[test]
+    fn validate_accepts_no_color() {
+        let config = LocalConfig {
+            color: None,
+            layout: None,
+        };
+        assert!(config.validate().is_ok());
+    }
+
+    #[test]
+    fn validate_rejects_invalid_color() {
+        let config = LocalConfig {
+            color: Some("banana".to_string()),
+            layout: None,
+        };
+        assert!(matches!(
+            config.validate(),
+            Err(crate::domain::project::ProjectError::InvalidColor { .. })
+        ));
     }
 }

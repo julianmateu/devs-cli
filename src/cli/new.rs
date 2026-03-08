@@ -45,6 +45,10 @@ pub fn run(repo: &dyn ProjectRepository, params: NewProjectParams) -> Result<()>
         bail!("project '{name}' already exists");
     }
 
+    if let Some(lc) = &local_config {
+        lc.validate()?;
+    }
+
     let resolved_color = color
         .map(String::from)
         .or_else(|| local_config.as_ref().and_then(|lc| lc.color.clone()));

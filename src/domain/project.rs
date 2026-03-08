@@ -30,6 +30,16 @@ pub struct ProjectMetadata {
 
 const INVALID_NAME_CHARS: &[char] = &['.', ':', ' '];
 
+pub fn validate_hex_color(color: &str) -> Result<(), ProjectError> {
+    let hex = color.strip_prefix('#').unwrap_or(color);
+    if hex.len() != 6 || !hex.chars().all(|c| c.is_ascii_hexdigit()) {
+        return Err(ProjectError::InvalidColor {
+            color: color.to_string(),
+        });
+    }
+    Ok(())
+}
+
 impl ProjectMetadata {
     pub fn validate(&self) -> Result<(), ProjectError> {
         if self.name.is_empty() {
@@ -45,12 +55,7 @@ impl ProjectMetadata {
             });
         }
         if let Some(color) = &self.color {
-            let hex = color.strip_prefix('#').unwrap_or(color);
-            if hex.len() != 6 || !hex.chars().all(|c| c.is_ascii_hexdigit()) {
-                return Err(ProjectError::InvalidColor {
-                    color: color.clone(),
-                });
-            }
+            validate_hex_color(color)?;
         }
         if self.path.is_empty() {
             return Err(ProjectError::EmptyPath);
