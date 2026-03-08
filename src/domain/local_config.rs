@@ -3,7 +3,8 @@ use serde::{Deserialize, Serialize};
 use crate::domain::layout::Layout;
 use crate::domain::project::{ProjectError, validate_hex_color};
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[serde(default)]
 pub struct LocalConfig {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub color: Option<String>,

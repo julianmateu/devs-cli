@@ -34,7 +34,9 @@ pub struct Layout {
     pub layout_string: Option<String>,
 }
 
-pub(crate) const SHELL_COMMANDS: &[&str] = &["zsh", "bash", "sh", "fish"];
+pub(crate) const SHELL_COMMANDS: &[&str] = &[
+    "zsh", "bash", "sh", "fish", "dash", "ksh", "tcsh", "csh", "nu", "pwsh",
+];
 
 impl Layout {
     pub fn from_snapshot(layout_string: String, panes: &[SavedPane]) -> Self {
@@ -52,6 +54,9 @@ impl Layout {
                 } else {
                     Some(p.command.clone())
                 };
+                // SplitDirection::Right is a placeholder; when restoring a
+                // snapshot the layout_string is the source of truth for pane
+                // geometry, so the split direction here is not used.
                 SplitPane {
                     split: SplitDirection::Right,
                     cmd,
@@ -311,6 +316,39 @@ cmd = "cargo watch"
         assert_eq!(layout.panes.len(), 2);
         assert_eq!(layout.panes[0].cmd, Some("npm run dev".to_string()));
         assert_eq!(layout.panes[1].cmd, Some("claude:code-review".to_string()));
+    }
+
+    #[test]
+    fn from_snapshot_recognizes_extended_shells() {
+        let panes = vec![
+            SavedPane {
+                index: 0,
+                path: "/p".to_string(),
+                command: "nu".to_string(),
+            },
+            SavedPane {
+                index: 1,
+                path: "/p".to_string(),
+                command: "pwsh".to_string(),
+            },
+            SavedPane {
+                index: 2,
+                path: "/p".to_string(),
+                command: "dash".to_string(),
+            },
+        ];
+
+        let layout = Layout::from_snapshot("layout".to_string(), &panes);
+
+        assert_eq!(layout.main.cmd, None, "nu should be recognized as a shell");
+        assert_eq!(
+            layout.panes[0].cmd, None,
+            "pwsh should be recognized as a shell"
+        );
+        assert_eq!(
+            layout.panes[1].cmd, None,
+            "dash should be recognized as a shell"
+        );
     }
 
     #[test]
