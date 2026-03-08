@@ -11,12 +11,16 @@ pub fn run(
     all: bool,
     since: Option<&str>,
     clear: bool,
+    force: bool,
     out: &mut dyn Write,
 ) -> Result<()> {
     let mut config = repo.load(name)?;
 
     if clear {
         let count = config.notes.len();
+        if count > 0 && !force {
+            anyhow::bail!("deleting {count} notes is destructive. Use --clear --force to confirm.");
+        }
         config.notes.clear();
         repo.save(&config)?;
         writeln!(out, "Cleared {count} notes for '{name}'.")?;
@@ -91,7 +95,7 @@ mod tests {
         add_notes(&repo, "myproject", notes);
         let mut out = Vec::new();
 
-        run(&repo, "myproject", false, None, false, &mut out).unwrap();
+        run(&repo, "myproject", false, None, false, false, &mut out).unwrap();
 
         let text = output_string(&out);
         let line_count = text.lines().count();
@@ -119,7 +123,7 @@ mod tests {
         add_notes(&repo, "myproject", notes);
         let mut out = Vec::new();
 
-        run(&repo, "myproject", true, None, false, &mut out).unwrap();
+        run(&repo, "myproject", true, None, false, false, &mut out).unwrap();
 
         let text = output_string(&out);
         assert_eq!(text.lines().count(), 25, "should show all 25 notes");
@@ -151,7 +155,16 @@ mod tests {
         );
         let mut out = Vec::new();
 
-        run(&repo, "myproject", false, Some("2d"), false, &mut out).unwrap();
+        run(
+            &repo,
+            "myproject",
+            false,
+            Some("2d"),
+            false,
+            false,
+            &mut out,
+        )
+        .unwrap();
 
         let text = output_string(&out);
         assert!(text.contains("recent note"), "should show recent note");
@@ -164,7 +177,15 @@ mod tests {
         create_project(&repo);
         let mut out = Vec::new();
 
-        let result = run(&repo, "myproject", false, Some("bad"), false, &mut out);
+        let result = run(
+            &repo,
+            "myproject",
+            false,
+            Some("bad"),
+            false,
+            false,
+            &mut out,
+        );
         assert!(result.is_err());
     }
 
@@ -189,7 +210,7 @@ mod tests {
         );
         let mut out = Vec::new();
 
-        run(&repo, "myproject", false, None, true, &mut out).unwrap();
+        run(&repo, "myproject", false, None, true, true, &mut out).unwrap();
 
         let config = repo.load("myproject").unwrap();
         assert!(config.notes.is_empty());
@@ -203,9 +224,45 @@ mod tests {
         create_project(&repo);
         let mut out = Vec::new();
 
-        run(&repo, "myproject", false, None, false, &mut out).unwrap();
+        run(&repo, "myproject", false, None, false, false, &mut out).unwrap();
 
         assert_eq!(output_string(&out), "No notes for 'myproject'.\n");
+    }
+
+    #[test]
+    fn notes_clear_without_force_fails() {
+        let repo = InMemoryProjectRepository::new();
+        create_project(&repo);
+
+        add_notes(
+            &repo,
+            "myproject",
+            vec![Note {
+                content: "important".to_string(),
+                created_at: dt("2026-03-03T10:00:00Z"),
+            }],
+        );
+        let mut out = Vec::new();
+
+        let result = run(&repo, "myproject", false, None, true, false, &mut out);
+        assert!(result.is_err());
+        let err = result.unwrap_err().to_string();
+        assert!(err.contains("--force"), "error should mention --force flag");
+
+        let config = repo.load("myproject").unwrap();
+        assert_eq!(config.notes.len(), 1, "notes should not be deleted");
+    }
+
+    #[test]
+    fn notes_clear_empty_without_force_succeeds() {
+        let repo = InMemoryProjectRepository::new();
+        create_project(&repo);
+        let mut out = Vec::new();
+
+        run(&repo, "myproject", false, None, true, false, &mut out).unwrap();
+
+        let text = output_string(&out);
+        assert!(text.contains("Cleared 0 notes"), "should succeed for empty");
     }
 
     #[test]
@@ -213,7 +270,7 @@ mod tests {
         let repo = InMemoryProjectRepository::new();
         let mut out = Vec::new();
 
-        let result = run(&repo, "nonexistent", false, None, false, &mut out);
+        let result = run(&repo, "nonexistent", false, None, false, false, &mut out);
         assert!(result.is_err());
     }
 }

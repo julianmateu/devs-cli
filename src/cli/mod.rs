@@ -158,6 +158,9 @@ pub enum Commands {
         /// Delete all notes
         #[arg(long)]
         clear: bool,
+        /// Confirm destructive clear operation
+        #[arg(long)]
+        force: bool,
     },
     /// Generate shell completions
     #[command(after_long_help = "\
