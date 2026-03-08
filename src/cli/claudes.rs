@@ -18,20 +18,46 @@ pub fn run(repo: &dyn ProjectRepository, name: &str, all: bool, out: &mut dyn Wr
         return Ok(());
     }
 
-    for session in sessions {
-        let status = match &session.status {
-            ClaudeSessionStatus::Active => "active".to_string(),
-            ClaudeSessionStatus::Done(finished_at) => {
-                format!("done ({})", finished_at.format("%Y-%m-%d %H:%M"))
+    struct Row {
+        label: String,
+        id: String,
+        started: String,
+        status: String,
+    }
+
+    let rows: Vec<Row> = sessions
+        .iter()
+        .map(|s| {
+            let status = match &s.status {
+                ClaudeSessionStatus::Active => "active".to_string(),
+                ClaudeSessionStatus::Done(finished_at) => {
+                    format!("done ({})", finished_at.format("%Y-%m-%d %H:%M"))
+                }
+            };
+            Row {
+                label: s.label.clone(),
+                id: s.id.clone(),
+                started: s.started_at.format("%Y-%m-%d %H:%M").to_string(),
+                status,
             }
-        };
+        })
+        .collect();
+
+    let w_label = rows.iter().map(|r| r.label.len()).max().unwrap_or(0).max(5);
+    let w_id = rows.iter().map(|r| r.id.len()).max().unwrap_or(0).max(2);
+    let w_started = 16; // "YYYY-MM-DD HH:MM"
+
+    writeln!(
+        out,
+        "{:<w_label$}   {:<w_id$}   {:<w_started$}   STATUS",
+        "LABEL", "ID", "STARTED"
+    )?;
+
+    for row in &rows {
         writeln!(
             out,
-            "{}  {}  {}  [{}]",
-            session.label,
-            session.id,
-            session.started_at.format("%Y-%m-%d %H:%M"),
-            status,
+            "{:<w_label$}   {:<w_id$}   {:<w_started$}   {}",
+            row.label, row.id, row.started, row.status
         )?;
     }
     Ok(())
@@ -63,7 +89,7 @@ mod tests {
     }
 
     #[test]
-    fn list_shows_active_sessions_by_default() {
+    fn list_shows_header_and_active_sessions() {
         let repo = InMemoryProjectRepository::new();
         create_project_with_sessions(
             &repo,
@@ -87,11 +113,12 @@ mod tests {
         run(&repo, "myproject", false, &mut out).unwrap();
 
         let text = output_string(&out);
-        assert!(
-            text.contains("brainstorm"),
-            "should show active session label"
-        );
-        assert!(text.contains("id-1"), "should show active session ID");
+        let lines: Vec<&str> = text.lines().collect();
+        assert!(lines[0].contains("LABEL"), "first line should be header");
+        assert!(lines[0].contains("ID"), "header should contain ID");
+        assert!(lines[0].contains("STATUS"), "header should contain STATUS");
+        assert!(text.contains("brainstorm"), "should show active label");
+        assert!(text.contains("id-1"), "should show active ID");
         assert!(!text.contains("refactor"), "should not show done session");
     }
 
