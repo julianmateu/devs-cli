@@ -12,17 +12,19 @@ After implementing the other 3 features, review and update all help text, man pa
 - `CLAUDE.md` — project structure and architecture docs
 - `src/cli/tmux_help.rs` — tmux reference (probably unchanged)
 
-## Checklist (to be filled after other features land)
+## Checklist
 
-- [ ] All new flags/options have clear help text
-- [ ] Optional `name` argument documented as "inferred from CWD if omitted"
-- [ ] `--local` flag on `edit` documented
-- [ ] Dynamic completions setup instructions updated
-- [ ] `docs/reference/` updated if commands changed
-- [ ] `docs/design.md` and `docs/data-model.md` still accurate
-- [ ] `CLAUDE.md` architecture section still accurate
-- [ ] No inconsistencies between help text and actual behavior
+- [x] All new flags/options have clear help text
+- [x] Optional `name` argument documented as "inferred from CWD if omitted"
+- [x] `--local` flag on `edit` documented in README
+- [x] Dynamic completions setup instructions in README
+- [x] `docs/reference/` — no changes needed (topic-specific, not command-specific)
+- [x] `docs/design.md` and `docs/data-model.md` still accurate
+- [x] `CLAUDE.md` architecture tree updated (added 3 missing modules)
+- [x] README command tables updated (`--local`, `--force`)
+- [x] README architecture section expanded (CWD inference, dynamic completions, doc links)
+- [x] No inconsistencies between help text and actual behavior
 
-## Dependencies
+## Status
 
-- Depends on all 3 other projects completing first
+Complete.
