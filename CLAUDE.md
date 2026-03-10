@@ -61,6 +61,7 @@ src/
 │   ├── completions.rs, tmux_help.rs, man.rs
 │   └── format.rs     # Re-exports domain::path helpers
 │
+├── test_support.rs   # Shared test doubles (InMemoryProjectRepository, MockTmuxAdapter, etc.)
 └── main.rs           # Composition root + dynamic completions (CompleteEnv)
 ```
 

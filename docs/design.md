@@ -184,7 +184,7 @@ The moment you add `--done` flags and status tracking, you're building a todo ap
 - `devs notes foo` — show last 20 notes
 - `devs notes foo --all` — show all notes
 - `devs notes foo --since 2d` — filter by time
-- `devs notes foo --clear` — wipe all notes
+- `devs notes foo --clear --force` — wipe all notes (force required if non-empty)
 
 
 ## 7. Tab colors: escape sequences, not iTerm2 API
