@@ -21,9 +21,11 @@ pub fn resolve_project_name(
     for project_name in &names {
         let config = repo.load(project_name)?;
         let expanded = expand_home(&config.project.path, home_dir);
-        let project_path = Path::new(&expanded);
-        if cwd.starts_with(project_path) {
-            matches.push((project_name.clone(), project_path.as_os_str().len()));
+        let canonical = Path::new(&expanded)
+            .canonicalize()
+            .unwrap_or_else(|_| expanded.into());
+        if cwd.starts_with(&canonical) {
+            matches.push((project_name.clone(), canonical.as_os_str().len()));
         }
     }
 
