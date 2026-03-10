@@ -13,16 +13,18 @@ Dynamic project name completions using `clap_complete`'s `CompleteEnv` + `ArgVal
 3. `CompleteEnv::complete()` intercepts this, calls `ArgValueCandidates` closures
 4. Project names are loaded from disk and returned as completion candidates
 
-### Approach chosen: CompleteEnv + ArgValueCandidates (Option A)
+### Approach chosen: CompleteEnv + ArgValueCandidates
 
 - `unstable-ext` feature on clap, `unstable-dynamic` feature on clap_complete
-- `complete_command()` factory in `main.rs` auto-discovers subcommands with a `name` arg
+- `complete_command()` factory in `main.rs` auto-discovers subcommands with a `name` arg (excluding `new`, which takes a new project name)
 - No architecture violations — all adapter construction stays in `main.rs`
 
 ### Commits
 
 - `ee84193` — Add dynamic project name completions via CompleteEnv
 - `a53339e` — Update completions docs and add integration tests for dynamic completions
+- `b2fa6be` — Mark dynamic completions as completed in project docs
+- `01bec5d` — Exclude `new` from project name completions, fix vacuous test
 
 ### Files changed
 
@@ -33,7 +35,15 @@ Dynamic project name completions using `clap_complete`'s `CompleteEnv` + `ArgVal
 | `src/cli/completions.rs` | Updated stderr message to mention static vs dynamic |
 | `src/cli/mod.rs` | Updated `Completions` help text with dynamic setup instructions |
 | `README.md` | Rewrote shell completions section (dynamic recommended, static as fallback) |
-| `tests/cli_tests.rs` | Added 2 integration tests for dynamic completions |
+| `tests/cli_tests.rs` | Added integration tests for dynamic completions |
+
+### Skeptical review
+
+Review completed, two HIGH issues found and fixed:
+1. `devs new` was incorrectly getting project name completions — excluded it
+2. Vacuous test replaced with meaningful one (verifies completions work without config dir)
+
+See `skeptical-review.md` for full details.
 
 ## Out of scope
 
