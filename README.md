@@ -140,7 +140,7 @@ Most project-scoped commands accept an optional project name. When omitted, the 
 | `devs list` | List all registered projects |
 | `devs status` | Show all projects with live tmux/Claude status |
 | `devs config [name]` | Print merged config (portable + local) to stdout |
-| `devs edit [name]` | Open the portable config in `$EDITOR` |
+| `devs edit [name] [--local]` | Open config in `$EDITOR` (`--local` for machine-local) |
 | `devs remove [name] --force [--kill]` | Remove a project (`--kill` to also kill tmux session) |
 
 `devs new` accepts `--session LABEL:ID` (repeatable) to pre-populate Claude sessions. `--path` defaults to the current directory and expands `~` to `$HOME`. If a `.devs.toml` file exists in the project directory, its color and layout are picked up automatically (explicit flags override).
@@ -210,7 +210,7 @@ devs claude-done my-api "implement auth middleware"
 | `devs notes [name]` | Show last 20 notes |
 | `devs notes [name] --all` | Show all notes |
 | `devs notes [name] --since 2d` | Filter by time |
-| `devs notes [name] --clear` | Delete all notes |
+| `devs notes [name] --clear --force` | Delete all notes (force required if non-empty) |
 
 Notes are fleeting breadcrumbs, not tasks. They help you remember where you left off after a context switch.
 
