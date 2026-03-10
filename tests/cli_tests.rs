@@ -66,23 +66,16 @@ fn dynamic_completions_outputs_shell_script() {
 }
 
 #[test]
-fn dynamic_completions_includes_project_names() {
-    let (home, _project_dir) = setup_project_home();
-
-    let output = devs_cmd()
+fn dynamic_completions_does_not_run_migration() {
+    // COMPLETE=bash should output a shell script and exit early,
+    // without requiring a valid config directory or running migration.
+    let home = tempfile::tempdir().unwrap();
+    devs_cmd()
         .env("COMPLETE", "bash")
         .env("HOME", home.path())
-        .output()
-        .expect("failed to run devs with COMPLETE=bash");
-
-    assert!(output.status.success());
-    // The completion script itself won't list project names directly,
-    // but it should register a completion handler for devs.
-    let stdout = String::from_utf8(output.stdout).unwrap();
-    assert!(
-        stdout.contains("complete"),
-        "Expected bash completion script"
-    );
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("complete"));
 }
 
 #[test]

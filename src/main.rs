@@ -63,8 +63,10 @@ fn capture_layout_from_session(
 fn complete_command() -> clap::Command {
     let mut cmd = Cli::command();
 
+    // "new" takes a name for a project that doesn't exist yet — skip it.
     let subcmd_names: Vec<String> = cmd
         .get_subcommands()
+        .filter(|s| s.get_name() != "new")
         .filter(|s| s.get_arguments().any(|a| a.get_id() == "name"))
         .map(|s| s.get_name().to_string())
         .collect();
