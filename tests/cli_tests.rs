@@ -119,12 +119,13 @@ fn new_path_is_optional_in_help() {
 }
 
 #[test]
-fn init_requires_name_argument() {
+fn init_without_name_outside_project_shows_error() {
     devs_cmd()
         .args(["init"])
+        .current_dir(std::env::temp_dir())
         .assert()
         .failure()
-        .stderr(predicate::str::contains("<NAME>").or(predicate::str::contains("required")));
+        .stderr(predicate::str::contains("no project found"));
 }
 
 #[test]

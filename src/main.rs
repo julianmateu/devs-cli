@@ -71,6 +71,12 @@ fn main() -> Result<()> {
     let launcher = OsProcessLauncher;
     let local_config_adapter = TomlLocalConfig;
 
+    let cwd = std::env::current_dir().context("failed to determine current directory")?;
+    let home_dir = dirs::home_dir().map(|p| p.to_string_lossy().into_owned());
+    let resolve = |name: Option<String>| -> Result<String> {
+        cli::resolve::resolve_project_name(name.as_deref(), &cwd, home_dir.as_deref(), &repo)
+    };
+
     match cli.command {
         Commands::New {
             name,
@@ -96,57 +102,111 @@ fn main() -> Result<()> {
                 },
             )?
         }
-        Commands::Init { name } => cli::init::run(&repo, &local_config_adapter, &name)?,
+        Commands::Init { name } => {
+            let name = resolve(name)?;
+            cli::init::run(&repo, &local_config_adapter, &name)?
+        }
         Commands::List => cli::list::run(&repo, &mut std::io::stdout())?,
         Commands::Status => cli::status::run(&repo, &tmux, &mut std::io::stdout())?,
-        Commands::Config { name } => cli::config::run(&repo, &name)?,
-        Commands::Edit { name, local } => cli::edit::run(&repo, &name, &config_dir, local)?,
+        Commands::Config { name } => {
+            let name = resolve(name)?;
+            cli::config::run(&repo, &name)?
+        }
+        Commands::Edit { name, local } => {
+            let name = resolve(name)?;
+            cli::edit::run(&repo, &name, &config_dir, local)?
+        }
         Commands::Remove { name, force, kill } => {
+            let name = resolve(name)?;
             cli::remove::run(&repo, &tmux, &name, force, kill)?
         }
         Commands::Close { name, save } => {
+            let name = resolve(name)?;
             cli::close::run(&repo, &tmux, terminal.as_ref(), &name, save)?
         }
         Commands::Open {
             name,
             default,
             saved,
-        } => cli::open::run(&repo, &tmux, terminal.as_ref(), &name, default, saved)?,
-        Commands::Save { name, as_default } => cli::save::run(&repo, &tmux, &name, as_default)?,
-        Commands::Reset { name } => cli::reset::run(&repo, &name)?,
+        } => {
+            let name = resolve(name)?;
+            cli::open::run(&repo, &tmux, terminal.as_ref(), &name, default, saved)?
+        }
+        Commands::Save { name, as_default } => {
+            let name = resolve(name)?;
+            cli::save::run(&repo, &tmux, &name, as_default)?
+        }
+        Commands::Reset { name } => {
+            let name = resolve(name)?;
+            cli::reset::run(&repo, &name)?
+        }
         Commands::Claude {
             name,
             label,
             resume,
-        } => match resume {
-            Some(label) => cli::claude::resume(&repo, &launcher, &name, &label)?,
-            None => {
-                let label = label.ok_or_else(|| {
-                    anyhow::anyhow!("label is required when starting a new session")
-                })?;
-                cli::claude::start(&repo, &launcher, &name, &label)?
+        } => {
+            // When one positional is given, Clap assigns it to `name`.
+            // If label is None and resume is None, the single arg is the label.
+            let (name, label) = match (name, label) {
+                (Some(n), Some(l)) => (Some(n), Some(l)),
+                (Some(v), None) if resume.is_none() => (None, Some(v)),
+                (n, l) => (n, l),
+            };
+            let name = resolve(name)?;
+            match resume {
+                Some(label) => cli::claude::resume(&repo, &launcher, &name, &label)?,
+                None => {
+                    let label = label.ok_or_else(|| {
+                        anyhow::anyhow!("label is required when starting a new session")
+                    })?;
+                    cli::claude::start(&repo, &launcher, &name, &label)?
+                }
             }
-        },
+        }
         Commands::Claudes { name, all } => {
+            let name = resolve(name)?;
             cli::claudes::run(&repo, &name, all, &mut std::io::stdout())?
         }
-        Commands::ClaudeDone { name, label } => cli::claude_done::run(&repo, &name, &label)?,
-        Commands::Note { name, message } => cli::note::run(&repo, &name, &message)?,
+        Commands::ClaudeDone { name, label } => {
+            // When one positional is given, Clap assigns it to `name`.
+            // If label is None, the single arg is actually the label.
+            let (name, label) = match (name, label) {
+                (Some(n), Some(l)) => (Some(n), l),
+                (Some(v), None) => (None, v),
+                (None, _) => bail!("session label is required"),
+            };
+            let name = resolve(name)?;
+            cli::claude_done::run(&repo, &name, &label)?
+        }
+        Commands::Note { name, message } => {
+            // When one positional is given, Clap assigns it to `name`.
+            // If message is None, the single arg is actually the message.
+            let (name, message) = match (name, message) {
+                (Some(n), Some(m)) => (Some(n), m),
+                (Some(v), None) => (None, v),
+                (None, _) => bail!("note message is required"),
+            };
+            let name = resolve(name)?;
+            cli::note::run(&repo, &name, &message)?
+        }
         Commands::Notes {
             name,
             all,
             since,
             clear,
             force,
-        } => cli::notes::run(
-            &repo,
-            &name,
-            all,
-            since.as_deref(),
-            clear,
-            force,
-            &mut std::io::stdout(),
-        )?,
+        } => {
+            let name = resolve(name)?;
+            cli::notes::run(
+                &repo,
+                &name,
+                all,
+                since.as_deref(),
+                clear,
+                force,
+                &mut std::io::stdout(),
+            )?
+        }
         Commands::Completions { shell } => cli::completions::run(shell),
         Commands::TmuxHelp => cli::tmux_help::run(),
         Commands::GenerateMan { output_dir } => cli::man::run(&output_dir)?,

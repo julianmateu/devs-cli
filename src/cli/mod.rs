@@ -18,6 +18,7 @@ pub mod notes;
 pub mod open;
 pub mod remove;
 pub mod reset;
+pub mod resolve;
 pub mod save;
 pub mod status;
 pub mod tmux_help;
@@ -53,8 +54,8 @@ pub enum Commands {
     },
     /// Export project config to a shareable .devs.toml
     Init {
-        /// Project name
-        name: String,
+        /// Project name (inferred from current directory if omitted)
+        name: Option<String>,
     },
     /// List all registered projects
     List,
@@ -62,21 +63,21 @@ pub enum Commands {
     Status,
     /// Print a project's current config
     Config {
-        /// Project name
-        name: String,
+        /// Project name (inferred from current directory if omitted)
+        name: Option<String>,
     },
     /// Open a project's config in $VISUAL or $EDITOR
     Edit {
-        /// Project name
-        name: String,
+        /// Project name (inferred from current directory if omitted)
+        name: Option<String>,
         /// Edit the machine-local config (sessions, saved state) instead of the portable config
         #[arg(long)]
         local: bool,
     },
     /// Remove a project from tracking
     Remove {
-        /// Project name
-        name: String,
+        /// Project name (inferred from current directory if omitted)
+        name: Option<String>,
         /// Skip confirmation prompt
         #[arg(long)]
         force: bool,
@@ -86,8 +87,8 @@ pub enum Commands {
     },
     /// Create or attach to a tmux session for a project
     Open {
-        /// Project name
-        name: String,
+        /// Project name (inferred from current directory if omitted)
+        name: Option<String>,
         /// Use the declarative layout even if saved state exists
         #[arg(long)]
         default: bool,
@@ -97,29 +98,29 @@ pub enum Commands {
     },
     /// Close a project's tmux session (optionally saving layout first)
     Close {
-        /// Project name
-        name: String,
+        /// Project name (inferred from current directory if omitted)
+        name: Option<String>,
         /// Save the current layout before closing
         #[arg(long)]
         save: bool,
     },
     /// Save the current tmux layout for a project
     Save {
-        /// Project name
-        name: String,
+        /// Project name (inferred from current directory if omitted)
+        name: Option<String>,
         /// Write the captured layout as the declarative default in [layout]
         #[arg(long)]
         as_default: bool,
     },
     /// Reset a project's layout to its declarative default
     Reset {
-        /// Project name
-        name: String,
+        /// Project name (inferred from current directory if omitted)
+        name: Option<String>,
     },
     /// Start or resume a Claude Code session
     Claude {
-        /// Project name
-        name: String,
+        /// Project name (inferred from current directory if omitted)
+        name: Option<String>,
         /// Session label (required when starting a new session)
         label: Option<String>,
         /// Resume a session by label
@@ -128,30 +129,30 @@ pub enum Commands {
     },
     /// List Claude Code sessions for a project
     Claudes {
-        /// Project name
-        name: String,
+        /// Project name (inferred from current directory if omitted)
+        name: Option<String>,
         /// Show all sessions including done ones
         #[arg(long)]
         all: bool,
     },
     /// Mark a Claude Code session as done
     ClaudeDone {
-        /// Project name
-        name: String,
+        /// Project name (inferred from current directory if omitted)
+        name: Option<String>,
         /// Session label
-        label: String,
+        label: Option<String>,
     },
     /// Add a timestamped note to a project
     Note {
-        /// Project name
-        name: String,
+        /// Project name (inferred from current directory if omitted)
+        name: Option<String>,
         /// Note message
-        message: String,
+        message: Option<String>,
     },
     /// List notes for a project
     Notes {
-        /// Project name
-        name: String,
+        /// Project name (inferred from current directory if omitted)
+        name: Option<String>,
         /// Show all notes (default: last 20)
         #[arg(long)]
         all: bool,
