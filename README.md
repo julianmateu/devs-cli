@@ -127,6 +127,8 @@ devs open my-api
 
 ## Commands
 
+Most project-scoped commands accept an optional project name. When omitted, the project is **inferred from your current directory** by matching against registered project paths. This works from the project root or any subdirectory.
+
 ### Project management
 
 | Command | Description |
@@ -134,12 +136,12 @@ devs open my-api
 | `devs new <name> [--path <path>] [--color <hex>]` | Register a new project |
 | `devs new <name> --from <project>` | Copy layout from an existing project |
 | `devs new <name> --from-session <session>` | Capture layout from a live tmux session |
-| `devs init <name>` | Export project config to a shareable `.devs.toml` |
+| `devs init [name]` | Export project config to a shareable `.devs.toml` |
 | `devs list` | List all registered projects |
 | `devs status` | Show all projects with live tmux/Claude status |
-| `devs config <name>` | Print merged config (portable + local) to stdout |
-| `devs edit <name>` | Open the portable config in `$EDITOR` |
-| `devs remove <name> --force [--kill]` | Remove a project (`--kill` to also kill tmux session) |
+| `devs config [name]` | Print merged config (portable + local) to stdout |
+| `devs edit [name]` | Open the portable config in `$EDITOR` |
+| `devs remove [name] --force [--kill]` | Remove a project (`--kill` to also kill tmux session) |
 
 `devs new` accepts `--session LABEL:ID` (repeatable) to pre-populate Claude sessions. `--path` defaults to the current directory and expands `~` to `$HOME`. If a `.devs.toml` file exists in the project directory, its color and layout are picked up automatically (explicit flags override).
 
@@ -160,13 +162,13 @@ devs remove frontend --force --kill
 
 | Command | Description |
 |---------|-------------|
-| `devs open <name>` | Create or attach to a tmux session |
-| `devs open <name> --default` | Always use the declarative layout |
-| `devs open <name> --saved` | Always use the saved state (error if none) |
-| `devs save <name>` | Snapshot the current tmux layout |
-| `devs save <name> --as-default` | Save current layout as the declarative default |
-| `devs close <name> [--save]` | Kill tmux session and reset tab color |
-| `devs reset <name>` | Discard saved state, revert to declarative layout |
+| `devs open [name]` | Create or attach to a tmux session |
+| `devs open [name] --default` | Always use the declarative layout |
+| `devs open [name] --saved` | Always use the saved state (error if none) |
+| `devs save [name]` | Snapshot the current tmux layout |
+| `devs save [name] --as-default` | Save current layout as the declarative default |
+| `devs close [name] [--save]` | Kill tmux session and reset tab color |
+| `devs reset [name]` | Discard saved state, revert to declarative layout |
 
 `devs open` is idempotent: if the tmux session already exists, it attaches to it. If saved state exists and no flags are given, it restores the saved layout. Use `--default` to force the declarative layout instead.
 
@@ -185,11 +187,11 @@ devs reset my-api            # discard saved state entirely
 
 | Command | Description |
 |---------|-------------|
-| `devs claude <name> <label>` | Launch a new Claude session with a label |
-| `devs claude <name> --resume <label>` | Resume an existing Claude session |
-| `devs claudes <name>` | List active Claude sessions for a project |
-| `devs claudes <name> --all` | Include completed sessions |
-| `devs claude-done <name> <label>` | Mark a Claude session as done |
+| `devs claude [name] <label>` | Launch a new Claude session with a label |
+| `devs claude [name] --resume <label>` | Resume an existing Claude session |
+| `devs claudes [name]` | List active Claude sessions for a project |
+| `devs claudes [name] --all` | Include completed sessions |
+| `devs claude-done [name] <label>` | Mark a Claude session as done |
 
 When you run `devs open`, active Claude sessions are printed as hints so you know what to resume.
 
@@ -204,11 +206,11 @@ devs claude-done my-api "implement auth middleware"
 
 | Command | Description |
 |---------|-------------|
-| `devs note <name> <message>` | Add a timestamped note |
-| `devs notes <name>` | Show last 20 notes |
-| `devs notes <name> --all` | Show all notes |
-| `devs notes <name> --since 2d` | Filter by time |
-| `devs notes <name> --clear` | Delete all notes |
+| `devs note [name] <message>` | Add a timestamped note |
+| `devs notes [name]` | Show last 20 notes |
+| `devs notes [name] --all` | Show all notes |
+| `devs notes [name] --since 2d` | Filter by time |
+| `devs notes [name] --clear` | Delete all notes |
 
 Notes are fleeting breadcrumbs, not tasks. They help you remember where you left off after a context switch.
 

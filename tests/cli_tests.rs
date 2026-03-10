@@ -204,6 +204,21 @@ fn config_with_explicit_name_ignores_cwd() {
 }
 
 #[test]
+fn claude_done_single_arg_is_label_with_cwd_inference() {
+    let (home, project_dir) = setup_project_home();
+
+    // With one positional arg, it should be treated as the label (not the name).
+    // CWD inference resolves the project, so the error is about the session, not the project.
+    devs_cmd()
+        .args(["claude-done", "nonexistent-label"])
+        .env("HOME", home.path())
+        .current_dir(project_dir.path())
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains("not found in project 'test-proj'"));
+}
+
+#[test]
 fn docs_mention_all_subcommands() {
     let output = devs_cmd()
         .arg("--help")
