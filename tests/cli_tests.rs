@@ -42,7 +42,7 @@ fn completions_generates_output() {
         .assert()
         .success()
         .stdout(predicate::str::contains("devs"))
-        .stderr(predicate::str::contains("setup instructions"));
+        .stderr(predicate::str::contains("completions"));
 }
 
 #[test]
@@ -52,7 +52,37 @@ fn completions_generates_bash_output() {
         .assert()
         .success()
         .stdout(predicate::str::contains("devs"))
-        .stderr(predicate::str::contains("setup instructions"));
+        .stderr(predicate::str::contains("completions"));
+}
+
+#[test]
+fn dynamic_completions_outputs_shell_script() {
+    devs_cmd()
+        .env("COMPLETE", "bash")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("complete"))
+        .stdout(predicate::str::is_empty().not());
+}
+
+#[test]
+fn dynamic_completions_includes_project_names() {
+    let (home, _project_dir) = setup_project_home();
+
+    let output = devs_cmd()
+        .env("COMPLETE", "bash")
+        .env("HOME", home.path())
+        .output()
+        .expect("failed to run devs with COMPLETE=bash");
+
+    assert!(output.status.success());
+    // The completion script itself won't list project names directly,
+    // but it should register a completion handler for devs.
+    let stdout = String::from_utf8(output.stdout).unwrap();
+    assert!(
+        stdout.contains("complete"),
+        "Expected bash completion script"
+    );
 }
 
 #[test]

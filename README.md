@@ -233,9 +233,36 @@ devs notes my-api
 
 ### Shell completions
 
-Generate and install completions for your shell. Run `devs completions --help` to see these instructions at any time.
+Dynamic completions complete subcommands, flags, **and project names**. Add one line to your shell config. Run `devs completions --help` to see these instructions at any time.
 
-#### Oh My Zsh
+#### Dynamic setup (recommended)
+
+**Zsh** — add to `~/.zshrc`:
+
+```zsh
+source <(COMPLETE=zsh devs)
+```
+
+**Bash** — add to `~/.bashrc`:
+
+```bash
+source <(COMPLETE=bash devs)
+```
+
+**Fish** — add to `~/.config/fish/config.fish`:
+
+```fish
+source (COMPLETE=fish devs | psub)
+```
+
+#### Static fallback
+
+If dynamic completions don't work on your system, you can generate static completions (subcommands and flags only, no project names):
+
+<details>
+<summary>Static setup instructions</summary>
+
+**Oh My Zsh:**
 
 ```bash
 mkdir -p ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/devs
@@ -244,7 +271,7 @@ devs completions zsh > ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/devs/_devs
 
 Then add `devs` to the `plugins=(...)` list in your `~/.zshrc` and restart your shell.
 
-#### Vanilla zsh
+**Vanilla zsh:**
 
 ```bash
 mkdir -p ~/.zfunc
@@ -258,22 +285,20 @@ fpath=(~/.zfunc $fpath)
 autoload -Uz compinit && compinit
 ```
 
-#### Bash
+**Bash:**
 
 ```bash
 mkdir -p ~/.local/share/bash-completion/completions
 devs completions bash > ~/.local/share/bash-completion/completions/devs
 ```
 
-Completions are loaded automatically on the next shell start.
-
-#### Fish
+**Fish:**
 
 ```bash
 devs completions fish > ~/.config/fish/completions/devs.fish
 ```
 
-Fish loads completions from this directory automatically — no further setup needed.
+</details>
 
 ## Shareable config (`.devs.toml`)
 

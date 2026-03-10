@@ -166,9 +166,25 @@ pub enum Commands {
         #[arg(long)]
         force: bool,
     },
-    /// Generate shell completions
+    /// Generate shell completions (static fallback — prefer dynamic setup below)
     #[command(after_long_help = "\
-SETUP INSTRUCTIONS:
+DYNAMIC COMPLETIONS (recommended):
+
+  Completes subcommands, flags, AND project names.
+  Add one line to your shell config:
+
+  Zsh (~/.zshrc):
+    source <(COMPLETE=zsh devs)
+
+  Bash (~/.bashrc):
+    source <(COMPLETE=bash devs)
+
+  Fish (~/.config/fish/config.fish):
+    source (COMPLETE=fish devs | psub)
+
+STATIC COMPLETIONS (fallback):
+
+  Completes subcommands and flags only. Use if dynamic setup doesn't work.
 
   Oh My Zsh:
     mkdir -p ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/devs
@@ -188,7 +204,6 @@ SETUP INSTRUCTIONS:
 
   Fish:
     devs completions fish > ~/.config/fish/completions/devs.fish
-    # Fish loads completions from this directory automatically
 ")]
     Completions {
         /// Shell to generate completions for
