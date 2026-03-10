@@ -430,10 +430,14 @@ src/
   ports/        Trait definitions (ProjectRepository, TmuxAdapter, TerminalAdapter)
   adapters/     Implementations (TOML files, shell tmux commands, OSC escapes)
   cli/          Command handlers, receiving traits not concrete types
-  main.rs       Composition root: wires concrete adapters into handlers
+  main.rs       Composition root + dynamic completions (CompleteEnv)
 ```
 
-See `docs/` for detailed design decisions and the full data model.
+Notable modules:
+- **`cli/resolve.rs`** — CWD-based project name inference (matches CWD against registered project paths)
+- **`main.rs`** — uses `clap_complete::env::CompleteEnv` for dynamic shell completions (project names, subcommands, flags)
+
+See [docs/design.md](docs/design.md) for design decisions and [docs/data-model.md](docs/data-model.md) for the storage format.
 
 ## License
 
