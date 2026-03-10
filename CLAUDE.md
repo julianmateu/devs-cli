@@ -30,7 +30,8 @@ src/
 │   ├── saved_state.rs     # SavedState, SavedPane
 │   ├── local_config.rs    # LocalConfig (.devs.toml model)
 │   ├── duration.rs        # Duration parsing (2d, 1h, 30m)
-│   └── path.rs            # abbreviate_home, expand_home
+│   ├── path.rs            # abbreviate_home, expand_home
+│   └── test_helpers.rs    # Shared test fixtures
 │
 ├── ports/            # Trait definitions (interfaces).
 │   ├── project_repository.rs   # trait ProjectRepository
@@ -43,6 +44,7 @@ src/
 │   ├── toml_project_repository.rs  # Split TOML files (projects/ + local/)
 │   ├── shell_tmux_adapter.rs       # Shell tmux commands
 │   ├── iterm_terminal_adapter.rs   # OSC escape sequences
+│   ├── noop_terminal_adapter.rs    # No-op for non-iTerm terminals
 │   ├── os_process_launcher.rs      # std::process
 │   ├── toml_local_config.rs        # .devs.toml reader/writer
 │   ├── split_config.rs             # PortableConfig/MachineLocalConfig
@@ -55,10 +57,11 @@ src/
 │   ├── open.rs, close.rs, save.rs, reset.rs
 │   ├── claude.rs, claudes.rs, claude_done.rs
 │   ├── note.rs, notes.rs
+│   ├── resolve.rs    # CWD-based project name resolution
 │   ├── completions.rs, tmux_help.rs, man.rs
 │   └── format.rs     # Re-exports domain::path helpers
 │
-└── main.rs           # Composition root
+└── main.rs           # Composition root + dynamic completions (CompleteEnv)
 ```
 
 **Key rules:**
