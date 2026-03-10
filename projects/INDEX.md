@@ -17,10 +17,7 @@ git checkout COMMIT -- projects/PROJECT-NAME
 
 ## Active Projects
 
-| Project | Summary |
-|---------|---------|
-| 2026-03-09-docs-consistency | Align docs/ with current codebase state |
-| 2026-03-09-ux-improvements | UX improvements summary (CWD inference, completions, edit --local, docs) |
+None.
 
 ## Archived Projects
 
@@ -33,3 +30,5 @@ Recover with `git show <commit>:projects/<name>/plan.md`
 | `2026-03-09-edit-local-flag` | `devs edit --local` flag to edit machine-local config | `2f6ba4f` |
 | `2026-03-09-cwd-project-inference` | CWD-based project name inference for all project-scoped commands | `f6cbdf7` |
 | `2026-03-09-dynamic-completions` | Dynamic shell completions for project names via CompleteEnv | `ac84ca6` |
+| `2026-03-09-docs-consistency` | Align CLAUDE.md and README.md with current codebase state | `d256200` |
+| `2026-03-09-ux-improvements` | UX improvements: edit --local, CWD inference, dynamic completions, docs pass | `d256200` |
