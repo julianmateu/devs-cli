@@ -69,6 +69,9 @@ pub enum Commands {
     Edit {
         /// Project name
         name: String,
+        /// Edit the machine-local config (sessions, saved state) instead of the portable config
+        #[arg(long)]
+        local: bool,
     },
     /// Remove a project from tracking
     Remove {

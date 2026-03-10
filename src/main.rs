@@ -100,7 +100,7 @@ fn main() -> Result<()> {
         Commands::List => cli::list::run(&repo, &mut std::io::stdout())?,
         Commands::Status => cli::status::run(&repo, &tmux, &mut std::io::stdout())?,
         Commands::Config { name } => cli::config::run(&repo, &name)?,
-        Commands::Edit { name } => cli::edit::run(&repo, &name, &config_dir)?,
+        Commands::Edit { name, local } => cli::edit::run(&repo, &name, &config_dir, local)?,
         Commands::Remove { name, force, kill } => {
             cli::remove::run(&repo, &tmux, &name, force, kill)?
         }
