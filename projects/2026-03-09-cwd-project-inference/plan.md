@@ -1,47 +1,23 @@
 # CWD-based project name inference
 
-## Goal
+**Status: Completed** (2026-03-10)
 
-When a user is inside a devs project directory, allow omitting the project name from commands.
+## What was done
 
-## Current behavior
+All 13 project-scoped commands now accept `name` as `Option<String>`. When omitted, the project is inferred by matching CWD against registered project paths.
 
-Every command that operates on a project requires an explicit `name: String` positional argument.
+### Implementation
 
-## Desired behavior
+- **`src/cli/resolve.rs`** — `resolve_project_name(name, cwd, home_dir, repo)` handles resolution:
+  - Explicit name passes through (no repo access)
+  - Otherwise iterates registered projects, expands tilde paths, matches CWD via `Path::starts_with`
+  - Deepest match wins when paths are nested
+  - Actionable errors for no match and ambiguous match
+- **`src/cli/mod.rs`** — Changed `name: String` → `name: Option<String>` on 13 commands (Init, Config, Edit, Remove, Open, Close, Save, Reset, Claude, Claudes, ClaudeDone, Note, Notes)
+- **`src/main.rs`** — Added `cwd`/`home_dir` computation and `resolve` closure, updated all 13 match arms
+- **Disambiguation for multi-positional commands** — `ClaudeDone`, `Note`, and `Claude` have additional positional args. Made those also `Option<String>` at the Clap level. When only one positional is provided, it's treated as the non-name arg (label/message), and name is inferred from CWD.
 
-- `name` becomes `Option<String>` on all project-scoped commands
-- If omitted, resolve by matching CWD against registered project paths
-- Match if CWD equals or is a subdirectory of a project's expanded path
-- Error with actionable message if no match or ambiguous match
+### Tests
 
-## Implementation steps
-
-1. **Add `resolve_project_name()` to `main.rs`** (or a small domain helper):
-   - Takes `Option<&str>` (user-provided name) and `&dyn ProjectRepository`
-   - If `Some(name)`, return it (current behavior)
-   - If `None`, get CWD, iterate `repo.list()`, load each project, expand its path, check if CWD starts with it
-   - Return the match, or error if 0 or >1 matches
-2. **Change `name: String` → `name: Option<String>`** on all project-scoped commands in `src/cli/mod.rs`
-3. **Update `main.rs` match arms** to call `resolve_project_name()` before dispatching
-4. **Tests:**
-   - Explicit name still works (pass-through)
-   - CWD matching finds the right project
-   - CWD in subdirectory of project path matches
-   - No match → clear error
-   - Multiple matches → clear error
-   - Deepest match wins when one project is a subdirectory of another
-5. **Update help text** to indicate name is optional
-
-## Design considerations
-
-- Project paths are stored abbreviated (`~/src/foo`). Must `expand_home()` before comparing.
-- CWD comes from `std::env::current_dir()` — absolute path.
-- Performance: `repo.list()` + loading each project to get its path. For typical usage (<50 projects) this is fine.
-- Optimization: Add a `find_by_path()` method to `ProjectRepository` trait to avoid loading full configs? Defer — premature optimization.
-
-## Files to change
-
-- `src/cli/mod.rs` — change `name: String` to `name: Option<String>` on ~12 commands
-- `src/main.rs` — add `resolve_project_name()`, update all match arms
-- Possibly `src/ports/project_repository.rs` if we add a trait method
+- 8 unit tests in `src/cli/resolve.rs` covering: pass-through, exact match, subdirectory match, no match, deepest match, ambiguous match, tilde expansion, empty repo
+- 3 integration tests in `tests/cli_tests.rs`: CWD exact match, subdirectory match, explicit name ignores CWD

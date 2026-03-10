@@ -7,9 +7,9 @@ Umbrella project tracking four UX improvements. Each has its own sub-project fol
 | # | Feature | Sub-project | Status |
 |---|---------|-------------|--------|
 | 1 | `devs edit --local` flag | `2026-03-09-edit-local-flag` (archived) | Done |
-| 2 | CWD-based project name inference | `2026-03-09-cwd-project-inference` | Next up |
+| 2 | CWD-based project name inference | `2026-03-09-cwd-project-inference` | Done |
 | 3 | Dynamic shell completions | `2026-03-09-dynamic-completions` | Needs research |
-| 4 | Docs / help text consistency | `2026-03-09-docs-consistency` | Blocked (depends on 2+3) |
+| 4 | Docs / help text consistency | `2026-03-09-docs-consistency` | Blocked (depends on 3) |
 
 ## Recommended order
 
