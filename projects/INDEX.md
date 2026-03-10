@@ -20,7 +20,7 @@ git checkout COMMIT -- projects/PROJECT-NAME
 | Project | Summary |
 |---------|---------|
 | 2026-03-09-docs-consistency | Align docs/ with current codebase state |
-| 2026-03-09-dynamic-completions | Dynamic shell completions from registered project names |
+| 2026-03-09-dynamic-completions | Dynamic shell completions from registered project names (COMPLETED) |
 | 2026-03-09-ux-improvements | UX improvements summary (CWD inference, completions, edit --local, docs) |
 
 ## Archived Projects

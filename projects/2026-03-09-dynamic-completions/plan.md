@@ -1,49 +1,41 @@
 # Dynamic shell completions
 
-## Goal
+## Status: COMPLETED (2026-03-10)
 
-Tab-completion for project names and claude session labels.
+## What was implemented
 
-## Current behavior
+Dynamic project name completions using `clap_complete`'s `CompleteEnv` + `ArgValueCandidates`.
 
-`devs completions <shell>` generates static completions via `clap_complete::generate()`. Only subcommands and flags are completed.
+### How it works
 
-## Desired behavior
+1. User adds `source <(COMPLETE=zsh devs)` to `.zshrc`
+2. On tab-press, the shell calls back into `devs` with special args
+3. `CompleteEnv::complete()` intercepts this, calls `ArgValueCandidates` closures
+4. Project names are loaded from disk and returned as completion candidates
 
-- Tab-completing after `devs open ` shows registered project names
-- Tab-completing after `devs claude <project> --resume ` shows session labels for that project
-- Works for zsh, bash, and fish
+### Approach chosen: CompleteEnv + ArgValueCandidates (Option A)
 
-## Research needed
+- `unstable-ext` feature on clap, `unstable-dynamic` feature on clap_complete
+- `complete_command()` factory in `main.rs` auto-discovers subcommands with a `name` arg
+- No architecture violations — all adapter construction stays in `main.rs`
 
-- Check current `clap_complete` version in `Cargo.toml`
-- Evaluate `clap_complete`'s `CompleteEnv` (clap 4.5+) vs custom approach
-- Determine if `ValueHint::Other` with a custom completer is viable
+### Commits
 
-## Implementation approaches
+- `ee84193` — Add dynamic project name completions via CompleteEnv
+- `a53339e` — Update completions docs and add integration tests for dynamic completions
 
-### Option A: clap_complete custom completer (preferred if available)
-- Use `clap_complete::engine::ArgValueCompleter` or similar
-- Register a callback that calls `repo.list()` at completion time
-- Requires the binary to be invoked for completions (standard pattern)
+### Files changed
 
-### Option B: Hidden `--complete` subcommand
-- `devs _complete projects` → prints project names one per line
-- `devs _complete sessions <project>` → prints session labels
-- Shell completion scripts call these subcommands
-- More shell-specific scripting needed
+| File | Change |
+|------|--------|
+| `Cargo.toml` | Added `unstable-ext` to clap, `unstable-dynamic` to clap_complete |
+| `src/main.rs` | Added `complete_command()` factory, `CompleteEnv` call before `Cli::parse()` |
+| `src/cli/completions.rs` | Updated stderr message to mention static vs dynamic |
+| `src/cli/mod.rs` | Updated `Completions` help text with dynamic setup instructions |
+| `README.md` | Rewrote shell completions section (dynamic recommended, static as fallback) |
+| `tests/cli_tests.rs` | Added 2 integration tests for dynamic completions |
 
-### Option C: Static generation with dynamic wrapper
-- Generate base completions with clap_complete
-- Wrap with shell functions that inject dynamic values
+## Out of scope
 
-## Files to change
-
-- `Cargo.toml` — possibly update clap_complete version
-- `src/cli/mod.rs` — add value hints or custom completers
-- `src/cli/completions.rs` — update generation logic
-- `src/main.rs` — wire up repository access for completions
-
-## Status
-
-Needs research on clap_complete version and capabilities before detailed planning.
+- Session label completions for `--resume` (clap_complete doesn't support context-dependent completions yet)
+- Fish/PowerShell testing (should work via CompleteEnv but untested)
