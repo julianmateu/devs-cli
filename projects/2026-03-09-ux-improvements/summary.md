@@ -11,8 +11,7 @@ Umbrella project tracking four UX improvements. Each has its own sub-project fol
 | 3 | Dynamic shell completions | `2026-03-09-dynamic-completions` | Needs research |
 | 4 | Docs / help text consistency | `2026-03-09-docs-consistency` | Blocked (depends on 3) |
 
-## Recommended order
+## Recommended order (remaining)
 
-1. **CWD inference** — foundational change (`name: String` → `Option<String>` on ~12 commands)
-2. **Dynamic completions** — benefits from CWD inference being done; needs clap_complete research first
-3. **Docs consistency** — final pass after all features land
+1. **Dynamic completions** — benefits from CWD inference being done; needs clap_complete research first
+2. **Docs consistency** — final pass after all features land
