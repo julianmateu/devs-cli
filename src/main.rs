@@ -9,7 +9,10 @@ pub(crate) mod test_support;
 use std::path::PathBuf;
 
 use anyhow::{Context, Result, bail};
-use clap::Parser;
+use clap::{CommandFactory, Parser};
+use clap_complete::CompletionCandidate;
+use clap_complete::engine::ArgValueCandidates;
+use clap_complete::env::CompleteEnv;
 
 use adapters::iterm_terminal_adapter::ItermTerminalAdapter;
 use adapters::migration;
@@ -21,6 +24,7 @@ use adapters::toml_project_repository::TomlProjectRepository;
 use cli::{Cli, Commands};
 use domain::layout::Layout;
 use ports::local_config::LocalConfigReader;
+use ports::project_repository::ProjectRepository;
 use ports::terminal_adapter::TerminalAdapter;
 use ports::tmux_adapter::TmuxAdapter;
 
@@ -56,7 +60,39 @@ fn capture_layout_from_session(
     Ok(Some(Layout::from_snapshot(layout_string, &panes)))
 }
 
+fn complete_command() -> clap::Command {
+    let mut cmd = Cli::command();
+
+    let subcmd_names: Vec<String> = cmd
+        .get_subcommands()
+        .filter(|s| s.get_arguments().any(|a| a.get_id() == "name"))
+        .map(|s| s.get_name().to_string())
+        .collect();
+
+    let repo = TomlProjectRepository::new(config_dir());
+    let names: Vec<String> = repo.list().unwrap_or_default();
+
+    for subcmd_name in subcmd_names {
+        let names = names.clone();
+        cmd = cmd.mut_subcommand(subcmd_name, |subcmd| {
+            let names = names.clone();
+            subcmd.mut_arg("name", |arg| {
+                arg.add(ArgValueCandidates::new(move || {
+                    names
+                        .iter()
+                        .map(|n| CompletionCandidate::new(n.as_str()))
+                        .collect()
+                }))
+            })
+        });
+    }
+
+    cmd
+}
+
 fn main() -> Result<()> {
+    CompleteEnv::with_factory(complete_command).complete();
+
     let cli = Cli::parse();
     let config_dir = config_dir();
     migration::migrate_if_needed(&config_dir)?;
