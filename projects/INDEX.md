@@ -32,3 +32,4 @@ Recover with `git show <commit>:projects/<name>/plan.md`
 | `2026-03-06-v1-1-polish` | Man pages, tmux help, shareable `.devs.toml` + `devs init` | `62ce85b` |
 | `2026-03-06-multi-machine-config` | Split config into portable/local, tilde paths, auto-migration v1→v2, git-sync support | `c883108` |
 | `2026-03-09-edit-local-flag` | `devs edit --local` flag to edit machine-local config | `2f6ba4f` |
+| `2026-03-09-cwd-project-inference` | CWD-based project name inference for all project-scoped commands | `f6cbdf7` |
