@@ -1,20 +1,27 @@
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 
 use anyhow::{Context, Result};
 
 use crate::ports::project_repository::ProjectRepository;
 
-pub fn run(repo: &dyn ProjectRepository, name: &str, config_dir: &Path, local: bool) -> Result<()> {
-    repo.load(name)?;
-    let path = if local {
-        let dir = config_dir.join("local");
-        std::fs::create_dir_all(&dir)
-            .with_context(|| format!("failed to create directory '{}'", dir.display()))?;
-        dir.join(format!("{name}.toml"))
+fn config_path(config_dir: &Path, name: &str, local: bool) -> PathBuf {
+    if local {
+        config_dir.join("local").join(format!("{name}.toml"))
     } else {
         config_dir.join("projects").join(format!("{name}.toml"))
-    };
+    }
+}
+
+pub fn run(repo: &dyn ProjectRepository, name: &str, config_dir: &Path, local: bool) -> Result<()> {
+    repo.load(name)?;
+    let path = config_path(config_dir, name, local);
+    if local {
+        if let Some(parent) = path.parent() {
+            std::fs::create_dir_all(parent)
+                .with_context(|| format!("failed to create directory '{}'", parent.display()))?;
+        }
+    }
     let editor = std::env::var("VISUAL")
         .or_else(|_| std::env::var("EDITOR"))
         .map_err(|_| {
@@ -107,11 +114,10 @@ mod tests {
             let old_visual = std::env::var("VISUAL").ok();
             let old_editor = std::env::var("EDITOR").ok();
 
-            // Set editor to a no-op command so the function proceeds past the editor check
-            // but will fail to launch (which is fine — we only care about directory creation)
+            // Set editor to `true` (a no-op command) so run() succeeds end-to-end
             std::env::set_var("VISUAL", "true");
 
-            let _ = run(&repo, "my-project", config_dir, true);
+            run(&repo, "my-project", config_dir, true).unwrap();
 
             if let Some(v) = old_visual {
                 std::env::set_var("VISUAL", v);
@@ -127,6 +133,24 @@ mod tests {
         assert!(
             config_dir.join("local").exists(),
             "local/ directory should be created when --local is used"
+        );
+    }
+
+    #[test]
+    fn config_path_returns_portable_path_by_default() {
+        let path = config_path(Path::new("/home/user/.config/devs"), "my-project", false);
+        assert_eq!(
+            path,
+            Path::new("/home/user/.config/devs/projects/my-project.toml")
+        );
+    }
+
+    #[test]
+    fn config_path_returns_local_path_when_local_is_true() {
+        let path = config_path(Path::new("/home/user/.config/devs"), "my-project", true);
+        assert_eq!(
+            path,
+            Path::new("/home/user/.config/devs/local/my-project.toml")
         );
     }
 }
